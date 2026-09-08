@@ -15,12 +15,12 @@
           "heading_text": null,
           "kind": {
             "Database": {
-              "table_alias": "",
-              "unique_id": ""
+              "table_alias": "rptrs_shift_log",
+              "unique_id": "52"
             }
           },
           "length": 162,
-          "long_name": null,
+          "long_name": "rptrs_shift_log.shift_name",
           "name": "shift_name",
           "short_name": "shift_name",
           "value_type": "String"
@@ -31,12 +31,12 @@
           "heading_text": null,
           "kind": {
             "Database": {
-              "table_alias": "",
-              "unique_id": ""
+              "table_alias": "rptrs_shift_log",
+              "unique_id": "53"
             }
           },
           "length": 4,
-          "long_name": null,
+          "long_name": "rptrs_shift_log.clock_in",
           "name": "clock_in",
           "short_name": "clock_in",
           "value_type": "Time"

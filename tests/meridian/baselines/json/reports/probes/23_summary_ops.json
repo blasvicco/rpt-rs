@@ -15,12 +15,12 @@
           "heading_text": null,
           "kind": {
             "Database": {
-              "table_alias": "",
-              "unique_id": ""
+              "table_alias": "shipment_mode",
+              "unique_id": "73"
             }
           },
           "length": 82,
-          "long_name": null,
+          "long_name": "shipment_mode.name",
           "name": "name",
           "short_name": "name",
           "value_type": "String"
@@ -31,12 +31,12 @@
           "heading_text": null,
           "kind": {
             "Database": {
-              "table_alias": "",
-              "unique_id": ""
+              "table_alias": "shipment",
+              "unique_id": "67"
             }
           },
           "length": 8,
-          "long_name": null,
+          "long_name": "shipment.freight_cost",
           "name": "freight_cost",
           "short_name": "freight_cost",
           "value_type": "Number"
@@ -47,12 +47,12 @@
           "heading_text": null,
           "kind": {
             "Database": {
-              "table_alias": "",
-              "unique_id": ""
+              "table_alias": "shipment",
+              "unique_id": "64"
             }
           },
           "length": 8,
-          "long_name": null,
+          "long_name": "shipment.weight_kg",
           "name": "weight_kg",
           "short_name": "weight_kg",
           "value_type": "Number"
@@ -63,12 +63,12 @@
           "heading_text": null,
           "kind": {
             "Database": {
-              "table_alias": "",
-              "unique_id": ""
+              "table_alias": "shipment",
+              "unique_id": "53"
             }
           },
           "length": 4,
-          "long_name": null,
+          "long_name": "shipment.carrier_id",
           "name": "carrier_id",
           "short_name": "carrier_id",
           "value_type": "Int32s"
@@ -79,12 +79,12 @@
           "heading_text": null,
           "kind": {
             "Database": {
-              "table_alias": "",
-              "unique_id": ""
+              "table_alias": "shipment",
+              "unique_id": "51"
             }
           },
           "length": 4,
-          "long_name": null,
+          "long_name": "shipment.shipment_id",
           "name": "shipment_id",
           "short_name": "shipment_id",
           "value_type": "Int32s"

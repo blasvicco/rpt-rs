@@ -13,8 +13,9 @@ use rpt_data::{
     compile_formulas, compile_formulas_at, normalize_param_name, DataContext, FieldFilter,
     Parameters, RunningTotals, SavedDataSource,
 };
-use rpt_formula::eval::Value;
-use rpt_formula::token::strip_braces;
+use rpt_formula::eval::{EvalContext, Value};
+use rpt_formula::token::{split_reference, strip_braces};
+use rpt_formula::RefKind;
 use rpt_model::{
     BlobFieldObject, BoxShape, Color, FieldObject, FieldRefKind, ImageFormat, LineShape,
     LineStyle as RptLineStyle, PictureObject, Rect, ReportObject, ReportObjectKind, Section,
@@ -1013,26 +1014,38 @@ impl Formatter<'_> {
     /// field's value into the subreport's parameters (consumed by its record-selection formula and the
     /// live-DB `WHERE` push-down); a direct field link becomes a structural equality filter on the
     /// subreport field. A link whose parent field is absent from the current row is skipped.
+    ///
+    /// `main_report_field` is usually a raw database field (`OINV.Letter`), read straight off the row.
+    /// It can also be a main-report **formula** (`@TotalTaxAmount`) — the row holds only fetched
+    /// columns, so that case is routed through the formula evaluator instead, exactly as a `{@…}`
+    /// Field object on the main report would resolve it.
     fn subreport_link_bindings(
         &self,
         links: &[rpt_model::SubreportLink],
     ) -> (Parameters, Vec<FieldFilter>) {
         let mut params = self.dataset.params.clone();
         let mut filters = Vec::new();
+        let Some(row) = self.current_row else {
+            return (params, filters);
+        };
         for link in links {
-            let Some(value) = self
-                .current_row
-                .and_then(|r| r.get(strip_braces(&link.main_report_field)))
-            else {
+            let field = strip_braces(&link.main_report_field);
+            let (kind, name) = split_reference(field);
+            let value = if kind == RefKind::Formula {
+                DataContext::new(row, self.formulas).resolve(RefKind::Formula, name)
+            } else {
+                row.get(field).cloned()
+            };
+            let Some(value) = value else {
                 continue;
             };
             match &link.linked_parameter {
                 Some(param) => {
-                    params.insert(normalize_param_name(param), value.clone());
+                    params.insert(normalize_param_name(param), value);
                 }
                 None => filters.push(FieldFilter {
                     field: strip_braces(&link.subreport_field).to_string(),
-                    value: value.clone(),
+                    value,
                 }),
             }
         }

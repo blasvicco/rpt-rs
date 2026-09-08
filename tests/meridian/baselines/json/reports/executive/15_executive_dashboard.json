@@ -15,12 +15,12 @@
           "heading_text": null,
           "kind": {
             "Database": {
-              "table_alias": "",
-              "unique_id": ""
+              "table_alias": "region",
+              "unique_id": "104"
             }
           },
           "length": 162,
-          "long_name": null,
+          "long_name": "region.name",
           "name": "name",
           "short_name": "name",
           "value_type": "String"
@@ -31,12 +31,12 @@
           "heading_text": null,
           "kind": {
             "Database": {
-              "table_alias": "",
-              "unique_id": ""
+              "table_alias": "sales_order",
+              "unique_id": "61"
             }
           },
           "length": 4,
-          "long_name": null,
+          "long_name": "sales_order.order_date",
           "name": "order_date",
           "short_name": "order_date",
           "value_type": "Date"
@@ -47,12 +47,12 @@
           "heading_text": null,
           "kind": {
             "Database": {
-              "table_alias": "",
-              "unique_id": ""
+              "table_alias": "order_line",
+              "unique_id": "57"
             }
           },
           "length": 8,
-          "long_name": null,
+          "long_name": "order_line.line_amount",
           "name": "line_amount",
           "short_name": "line_amount",
           "value_type": "Number"
@@ -3768,12 +3768,12 @@
                 "heading_text": null,
                 "kind": {
                   "Database": {
-                    "table_alias": "",
-                    "unique_id": ""
+                    "table_alias": "shipment_mode",
+                    "unique_id": "73"
                   }
                 },
                 "length": 82,
-                "long_name": null,
+                "long_name": "shipment_mode.name",
                 "name": "name",
                 "short_name": "name",
                 "value_type": "String"
@@ -3784,12 +3784,12 @@
                 "heading_text": null,
                 "kind": {
                   "Database": {
-                    "table_alias": "",
-                    "unique_id": ""
+                    "table_alias": "shipment",
+                    "unique_id": "51"
                   }
                 },
                 "length": 4,
-                "long_name": null,
+                "long_name": "shipment.shipment_id",
                 "name": "shipment_id",
                 "short_name": "shipment_id",
                 "value_type": "Int32s"
@@ -3800,12 +3800,12 @@
                 "heading_text": null,
                 "kind": {
                   "Database": {
-                    "table_alias": "",
-                    "unique_id": ""
+                    "table_alias": "shipment",
+                    "unique_id": "63"
                   }
                 },
                 "length": 4,
-                "long_name": null,
+                "long_name": "shipment.actual_delivery",
                 "name": "actual_delivery",
                 "short_name": "actual_delivery",
                 "value_type": "Date"
@@ -3816,12 +3816,12 @@
                 "heading_text": null,
                 "kind": {
                   "Database": {
-                    "table_alias": "",
-                    "unique_id": ""
+                    "table_alias": "shipment",
+                    "unique_id": "62"
                   }
                 },
                 "length": 4,
-                "long_name": null,
+                "long_name": "shipment.planned_delivery",
                 "name": "planned_delivery",
                 "short_name": "planned_delivery",
                 "value_type": "Date"
@@ -5922,12 +5922,12 @@
                 "heading_text": null,
                 "kind": {
                   "Database": {
-                    "table_alias": "",
-                    "unique_id": ""
+                    "table_alias": "exchange_rate",
+                    "unique_id": "51"
                   }
                 },
                 "length": 14,
-                "long_name": null,
+                "long_name": "exchange_rate.currency_code",
                 "name": "currency_code",
                 "short_name": "currency_code",
                 "value_type": "String"
@@ -5938,12 +5938,12 @@
                 "heading_text": null,
                 "kind": {
                   "Database": {
-                    "table_alias": "",
-                    "unique_id": ""
+                    "table_alias": "exchange_rate",
+                    "unique_id": "52"
                   }
                 },
                 "length": 4,
-                "long_name": null,
+                "long_name": "exchange_rate.rate_date",
                 "name": "rate_date",
                 "short_name": "rate_date",
                 "value_type": "Date"
@@ -5954,12 +5954,12 @@
                 "heading_text": null,
                 "kind": {
                   "Database": {
-                    "table_alias": "",
-                    "unique_id": ""
+                    "table_alias": "exchange_rate",
+                    "unique_id": "53"
                   }
                 },
                 "length": 8,
-                "long_name": null,
+                "long_name": "exchange_rate.rate_to_usd",
                 "name": "rate_to_usd",
                 "short_name": "rate_to_usd",
                 "value_type": "Number"

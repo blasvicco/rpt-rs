@@ -18,12 +18,12 @@
           "heading_text": null,
           "kind": {
             "Database": {
-              "table_alias": "",
-              "unique_id": ""
+              "table_alias": "product",
+              "unique_id": "55"
             }
           },
           "length": 322,
-          "long_name": null,
+          "long_name": "product.name",
           "name": "name",
           "short_name": "name",
           "value_type": "String"
@@ -34,12 +34,12 @@
           "heading_text": null,
           "kind": {
             "Database": {
-              "table_alias": "",
-              "unique_id": ""
+              "table_alias": "cat_class",
+              "unique_id": "77"
             }
           },
           "length": 242,
-          "long_name": null,
+          "long_name": "cat_class.name",
           "name": "name",
           "short_name": "name",
           "value_type": "String"
@@ -50,12 +50,12 @@
           "heading_text": null,
           "kind": {
             "Database": {
-              "table_alias": "",
-              "unique_id": ""
+              "table_alias": "cat_group",
+              "unique_id": "83"
             }
           },
           "length": 242,
-          "long_name": null,
+          "long_name": "cat_group.name",
           "name": "name",
           "short_name": "name",
           "value_type": "String"
@@ -66,12 +66,12 @@
           "heading_text": null,
           "kind": {
             "Database": {
-              "table_alias": "",
-              "unique_id": ""
+              "table_alias": "cat_division",
+              "unique_id": "89"
             }
           },
           "length": 242,
-          "long_name": null,
+          "long_name": "cat_division.name",
           "name": "name",
           "short_name": "name",
           "value_type": "String"
@@ -82,12 +82,12 @@
           "heading_text": null,
           "kind": {
             "Database": {
-              "table_alias": "",
-              "unique_id": ""
+              "table_alias": "product",
+              "unique_id": "50"
             }
           },
           "length": 4,
-          "long_name": null,
+          "long_name": "product.product_id",
           "name": "product_id",
           "short_name": "product_id",
           "value_type": "Int32s"
@@ -98,12 +98,12 @@
           "heading_text": null,
           "kind": {
             "Database": {
-              "table_alias": "",
-              "unique_id": ""
+              "table_alias": "product",
+              "unique_id": "54"
             }
           },
           "length": 82,
-          "long_name": null,
+          "long_name": "product.sku",
           "name": "sku",
           "short_name": "sku",
           "value_type": "String"
@@ -114,12 +114,12 @@
           "heading_text": null,
           "kind": {
             "Database": {
-              "table_alias": "",
-              "unique_id": ""
+              "table_alias": "product",
+              "unique_id": "56"
             }
           },
           "length": 1602,
-          "long_name": null,
+          "long_name": "product.description",
           "name": "description",
           "short_name": "description",
           "value_type": "String"
@@ -130,12 +130,12 @@
           "heading_text": null,
           "kind": {
             "Database": {
-              "table_alias": "",
-              "unique_id": ""
+              "table_alias": "product",
+              "unique_id": "57"
             }
           },
           "length": 8,
-          "long_name": null,
+          "long_name": "product.unit_price",
           "name": "unit_price",
           "short_name": "unit_price",
           "value_type": "Number"
@@ -146,12 +146,12 @@
           "heading_text": null,
           "kind": {
             "Database": {
-              "table_alias": "",
-              "unique_id": ""
+              "table_alias": "product",
+              "unique_id": "58"
             }
           },
           "length": 14,
-          "long_name": null,
+          "long_name": "product.currency_code",
           "name": "currency_code",
           "short_name": "currency_code",
           "value_type": "String"
@@ -162,12 +162,12 @@
           "heading_text": null,
           "kind": {
             "Database": {
-              "table_alias": "",
-              "unique_id": ""
+              "table_alias": "product",
+              "unique_id": "59"
             }
           },
           "length": 8,
-          "long_name": null,
+          "long_name": "product.weight_kg",
           "name": "weight_kg",
           "short_name": "weight_kg",
           "value_type": "Number"
@@ -178,12 +178,12 @@
           "heading_text": null,
           "kind": {
             "Database": {
-              "table_alias": "",
-              "unique_id": ""
+              "table_alias": "product",
+              "unique_id": "62"
             }
           },
           "length": 12,
-          "long_name": null,
+          "long_name": "product.is_hazardous",
           "name": "is_hazardous",
           "short_name": "is_hazardous",
           "value_type": "String"
@@ -194,12 +194,12 @@
           "heading_text": null,
           "kind": {
             "Database": {
-              "table_alias": "",
-              "unique_id": ""
+              "table_alias": "product",
+              "unique_id": "64"
             }
           },
           "length": -1,
-          "long_name": null,
+          "long_name": "product.image",
           "name": "image",
           "short_name": "image",
           "value_type": "Blob"
@@ -210,12 +210,12 @@
           "heading_text": null,
           "kind": {
             "Database": {
-              "table_alias": "",
-              "unique_id": ""
+              "table_alias": "supplier",
+              "unique_id": "69"
             }
           },
           "length": 242,
-          "long_name": null,
+          "long_name": "supplier.name",
           "name": "name",
           "short_name": "name",
           "value_type": "String"

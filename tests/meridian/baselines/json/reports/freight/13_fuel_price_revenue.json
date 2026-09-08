@@ -15,12 +15,12 @@
           "heading_text": null,
           "kind": {
             "Database": {
-              "table_alias": "",
-              "unique_id": ""
+              "table_alias": "region",
+              "unique_id": "104"
             }
           },
           "length": 162,
-          "long_name": null,
+          "long_name": "region.name",
           "name": "name",
           "short_name": "name",
           "value_type": "String"
@@ -31,12 +31,12 @@
           "heading_text": null,
           "kind": {
             "Database": {
-              "table_alias": "",
-              "unique_id": ""
+              "table_alias": "sales_order",
+              "unique_id": "61"
             }
           },
           "length": 4,
-          "long_name": null,
+          "long_name": "sales_order.order_date",
           "name": "order_date",
           "short_name": "order_date",
           "value_type": "Date"
@@ -47,12 +47,12 @@
           "heading_text": null,
           "kind": {
             "Database": {
-              "table_alias": "",
-              "unique_id": ""
+              "table_alias": "order_line",
+              "unique_id": "57"
             }
           },
           "length": 8,
-          "long_name": null,
+          "long_name": "order_line.line_amount",
           "name": "line_amount",
           "short_name": "line_amount",
           "value_type": "Number"
@@ -63,12 +63,12 @@
           "heading_text": null,
           "kind": {
             "Database": {
-              "table_alias": "",
-              "unique_id": ""
+              "table_alias": "customer",
+              "unique_id": "73"
             }
           },
           "length": 242,
-          "long_name": null,
+          "long_name": "customer.name",
           "name": "name",
           "short_name": "name",
           "value_type": "String"
@@ -4791,12 +4791,12 @@
                 "heading_text": null,
                 "kind": {
                   "Database": {
-                    "table_alias": "",
-                    "unique_id": ""
+                    "table_alias": "fuel_price",
+                    "unique_id": "51"
                   }
                 },
                 "length": 4,
-                "long_name": null,
+                "long_name": "fuel_price.fuel_id",
                 "name": "fuel_id",
                 "short_name": "fuel_id",
                 "value_type": "Int32s"
@@ -4807,12 +4807,12 @@
                 "heading_text": null,
                 "kind": {
                   "Database": {
-                    "table_alias": "",
-                    "unique_id": ""
+                    "table_alias": "fuel_price",
+                    "unique_id": "52"
                   }
                 },
                 "length": 4,
-                "long_name": null,
+                "long_name": "fuel_price.price_date",
                 "name": "price_date",
                 "short_name": "price_date",
                 "value_type": "Date"
@@ -4823,12 +4823,12 @@
                 "heading_text": null,
                 "kind": {
                   "Database": {
-                    "table_alias": "",
-                    "unique_id": ""
+                    "table_alias": "fuel_price",
+                    "unique_id": "53"
                   }
                 },
                 "length": 8,
-                "long_name": null,
+                "long_name": "fuel_price.open",
                 "name": "open",
                 "short_name": "open",
                 "value_type": "Number"
@@ -4839,12 +4839,12 @@
                 "heading_text": null,
                 "kind": {
                   "Database": {
-                    "table_alias": "",
-                    "unique_id": ""
+                    "table_alias": "fuel_price",
+                    "unique_id": "54"
                   }
                 },
                 "length": 8,
-                "long_name": null,
+                "long_name": "fuel_price.high",
                 "name": "high",
                 "short_name": "high",
                 "value_type": "Number"
@@ -4855,12 +4855,12 @@
                 "heading_text": null,
                 "kind": {
                   "Database": {
-                    "table_alias": "",
-                    "unique_id": ""
+                    "table_alias": "fuel_price",
+                    "unique_id": "55"
                   }
                 },
                 "length": 8,
-                "long_name": null,
+                "long_name": "fuel_price.low",
                 "name": "low",
                 "short_name": "low",
                 "value_type": "Number"
@@ -4871,12 +4871,12 @@
                 "heading_text": null,
                 "kind": {
                   "Database": {
-                    "table_alias": "",
-                    "unique_id": ""
+                    "table_alias": "fuel_price",
+                    "unique_id": "56"
                   }
                 },
                 "length": 8,
-                "long_name": null,
+                "long_name": "fuel_price.close",
                 "name": "close",
                 "short_name": "close",
                 "value_type": "Number"
@@ -4887,12 +4887,12 @@
                 "heading_text": null,
                 "kind": {
                   "Database": {
-                    "table_alias": "",
-                    "unique_id": ""
+                    "table_alias": "fuel_price",
+                    "unique_id": "57"
                   }
                 },
                 "length": 8,
-                "long_name": null,
+                "long_name": "fuel_price.volume",
                 "name": "volume",
                 "short_name": "volume",
                 "value_type": "Number"

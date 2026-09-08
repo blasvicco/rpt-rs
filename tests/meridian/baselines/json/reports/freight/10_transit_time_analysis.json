@@ -15,12 +15,12 @@
           "heading_text": null,
           "kind": {
             "Database": {
-              "table_alias": "",
-              "unique_id": ""
+              "table_alias": "shipment",
+              "unique_id": "63"
             }
           },
           "length": 4,
-          "long_name": null,
+          "long_name": "shipment.actual_delivery",
           "name": "actual_delivery",
           "short_name": "actual_delivery",
           "value_type": "Date"
@@ -31,12 +31,12 @@
           "heading_text": null,
           "kind": {
             "Database": {
-              "table_alias": "",
-              "unique_id": ""
+              "table_alias": "shipment",
+              "unique_id": "61"
             }
           },
           "length": 4,
-          "long_name": null,
+          "long_name": "shipment.actual_pickup",
           "name": "actual_pickup",
           "short_name": "actual_pickup",
           "value_type": "Date"
@@ -47,12 +47,12 @@
           "heading_text": null,
           "kind": {
             "Database": {
-              "table_alias": "",
-              "unique_id": ""
+              "table_alias": "shipment",
+              "unique_id": "51"
             }
           },
           "length": 4,
-          "long_name": null,
+          "long_name": "shipment.shipment_id",
           "name": "shipment_id",
           "short_name": "shipment_id",
           "value_type": "Int32s"
@@ -63,12 +63,12 @@
           "heading_text": null,
           "kind": {
             "Database": {
-              "table_alias": "",
-              "unique_id": ""
+              "table_alias": "shipment",
+              "unique_id": "64"
             }
           },
           "length": 8,
-          "long_name": null,
+          "long_name": "shipment.weight_kg",
           "name": "weight_kg",
           "short_name": "weight_kg",
           "value_type": "Number"
@@ -79,12 +79,12 @@
           "heading_text": null,
           "kind": {
             "Database": {
-              "table_alias": "",
-              "unique_id": ""
+              "table_alias": "shipment",
+              "unique_id": "65"
             }
           },
           "length": 8,
-          "long_name": null,
+          "long_name": "shipment.volume_m3",
           "name": "volume_m3",
           "short_name": "volume_m3",
           "value_type": "Number"
@@ -95,12 +95,12 @@
           "heading_text": null,
           "kind": {
             "Database": {
-              "table_alias": "",
-              "unique_id": ""
+              "table_alias": "shipment",
+              "unique_id": "67"
             }
           },
           "length": 8,
-          "long_name": null,
+          "long_name": "shipment.freight_cost",
           "name": "freight_cost",
           "short_name": "freight_cost",
           "value_type": "Number"

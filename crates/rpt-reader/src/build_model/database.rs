@@ -13,12 +13,17 @@ use crate::records::RecordStream;
 use std::collections::BTreeMap;
 
 /// Project the `QESession` record tree into the [`Database`] model: tables (with their SQL
-/// `Command` text, field schema, and each table's own connection info), connections, and links.
+/// `Command` text, field schema, and each table's own connection info), connections, and links. Also
+/// returns the field-id index (global QE field id → owning table alias + its [`DbFieldDef`]) built
+/// along the way, so [`data_def::build_field`](crate::build_model::data_def::build_field) can resolve
+/// a `Contents` `0x0073` field definition's own `field_id` handle back to the table it reads from —
+/// the *same* global id space the `0x0004 QeField` records use, which is otherwise thrown away once
+/// the [`Database`] is built.
 ///
 /// The record numbers below are the query engine's own — `0x0003` is a table here and an unrelated
 /// report-definition record in `Contents` — so the tree is taken only where the stream is written in
 /// that vocabulary.
-pub(super) fn build_database(qe: &RecordStream) -> Database {
+pub(super) fn build_database(qe: &RecordStream) -> (Database, BTreeMap<i32, (String, DbFieldDef)>) {
     let logical = qe.logical_bytes();
     let tree = qe.record_tree_in(Dialect::QeSession);
     let mut db = Database::default();
@@ -162,7 +167,7 @@ pub(super) fn build_database(qe: &RecordStream) -> Database {
     }
     db.links = links;
 
-    db
+    (db, field_index)
 }
 
 /// Decode the obfuscated string value of a QE logon property: string variants store their bytes

@@ -15,12 +15,12 @@
           "heading_text": null,
           "kind": {
             "Database": {
-              "table_alias": "",
-              "unique_id": ""
+              "table_alias": "customer",
+              "unique_id": "51"
             }
           },
           "length": 4,
-          "long_name": null,
+          "long_name": "customer.customer_id",
           "name": "customer_id",
           "short_name": "customer_id",
           "value_type": "Int32s"
@@ -31,12 +31,12 @@
           "heading_text": null,
           "kind": {
             "Database": {
-              "table_alias": "",
-              "unique_id": ""
+              "table_alias": "customer",
+              "unique_id": "54"
             }
           },
           "length": 242,
-          "long_name": null,
+          "long_name": "customer.name",
           "name": "name",
           "short_name": "name",
           "value_type": "String"
@@ -47,12 +47,12 @@
           "heading_text": null,
           "kind": {
             "Database": {
-              "table_alias": "",
-              "unique_id": ""
+              "table_alias": "customer",
+              "unique_id": "55"
             }
           },
           "length": 66,
-          "long_name": null,
+          "long_name": "customer.account_code",
           "name": "account_code",
           "short_name": "account_code",
           "value_type": "String"
@@ -2310,12 +2310,12 @@
                 "heading_text": null,
                 "kind": {
                   "Database": {
-                    "table_alias": "",
-                    "unique_id": ""
+                    "table_alias": "invoice",
+                    "unique_id": "51"
                   }
                 },
                 "length": 4,
-                "long_name": null,
+                "long_name": "invoice.invoice_id",
                 "name": "invoice_id",
                 "short_name": "invoice_id",
                 "value_type": "Int32s"
@@ -2326,12 +2326,12 @@
                 "heading_text": null,
                 "kind": {
                   "Database": {
-                    "table_alias": "",
-                    "unique_id": ""
+                    "table_alias": "invoice",
+                    "unique_id": "59"
                   }
                 },
                 "length": 8,
-                "long_name": null,
+                "long_name": "invoice.amount_gross",
                 "name": "amount_gross",
                 "short_name": "amount_gross",
                 "value_type": "Number"
@@ -2342,12 +2342,12 @@
                 "heading_text": null,
                 "kind": {
                   "Database": {
-                    "table_alias": "",
-                    "unique_id": ""
+                    "table_alias": "invoice",
+                    "unique_id": "53"
                   }
                 },
                 "length": 4,
-                "long_name": null,
+                "long_name": "invoice.customer_id",
                 "name": "customer_id",
                 "short_name": "customer_id",
                 "value_type": "Int32s"

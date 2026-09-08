@@ -113,9 +113,16 @@ pub(crate) fn build_report(
 
     // The database — tables, the SQL command, connection info, and the full field schema — lives
     // in the separately-encrypted `QESession` (Query Engine) stream. It is decoded first so the
-    // field schema is available to the record-tree passes below.
+    // field schema is available to the record-tree passes below. The field-id index resolves a
+    // `Contents` `0x0073` field definition's own `field_id` back to its owning table + schema entry
+    // (the two streams share one global field-id space) — that is what lets a *referenced* field
+    // (`data_definition.field_definitions`) carry the same qualified `long_name` its table-schema
+    // counterpart (`database.tables[].data_fields`) already does.
+    let mut field_index: BTreeMap<i32, (String, crate::model::DbFieldDef)> = BTreeMap::new();
     if let Some(stream) = qe {
-        report.database = build_database(stream);
+        let (database, index) = build_database(stream);
+        report.database = database;
+        field_index = index;
     }
 
     // Parameter detail records (`0x007a`), keyed by their `crobj://{…}` GUID — joined to the
@@ -155,7 +162,7 @@ pub(crate) fn build_report(
                 })
             })
             .collect();
-        report.data_definition = build_data_definition(&tree, logical, &field_types);
+        report.data_definition = build_data_definition(&tree, logical, &field_types, &field_index);
         report.report_definition =
             build_report_definition(&tree, logical, &report.data_definition.groups, &field_types);
         report.print_options = build_print_options(&tree, logical);

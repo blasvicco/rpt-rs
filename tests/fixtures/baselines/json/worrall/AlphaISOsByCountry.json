@@ -17,12 +17,12 @@
           "heading_text": null,
           "kind": {
             "Database": {
-              "table_alias": "",
-              "unique_id": ""
+              "table_alias": "countries_all_iso",
+              "unique_id": "48"
             }
           },
           "length": 4,
-          "long_name": null,
+          "long_name": "countries_all_iso.id",
           "name": "id",
           "short_name": "id",
           "value_type": "Int32s"
@@ -33,12 +33,12 @@
           "heading_text": null,
           "kind": {
             "Database": {
-              "table_alias": "",
-              "unique_id": ""
+              "table_alias": "countries_all_iso",
+              "unique_id": "49"
             }
           },
           "length": 65534,
-          "long_name": null,
+          "long_name": "countries_all_iso.name",
           "name": "name",
           "short_name": "name",
           "value_type": "PersistentMemo"
@@ -49,12 +49,12 @@
           "heading_text": null,
           "kind": {
             "Database": {
-              "table_alias": "",
-              "unique_id": ""
+              "table_alias": "countries_all_iso",
+              "unique_id": "50"
             }
           },
           "length": 65534,
-          "long_name": null,
+          "long_name": "countries_all_iso.alpha_2_code",
           "name": "alpha_2_code",
           "short_name": "alpha_2_code",
           "value_type": "PersistentMemo"
@@ -65,12 +65,12 @@
           "heading_text": null,
           "kind": {
             "Database": {
-              "table_alias": "",
-              "unique_id": ""
+              "table_alias": "countries_all_iso",
+              "unique_id": "51"
             }
           },
           "length": 65534,
-          "long_name": null,
+          "long_name": "countries_all_iso.alpha_3_code",
           "name": "alpha_3_code",
           "short_name": "alpha_3_code",
           "value_type": "PersistentMemo"
@@ -81,12 +81,12 @@
           "heading_text": null,
           "kind": {
             "Database": {
-              "table_alias": "",
-              "unique_id": ""
+              "table_alias": "countries_all_iso",
+              "unique_id": "52"
             }
           },
           "length": 65534,
-          "long_name": null,
+          "long_name": "countries_all_iso.numeric_code",
           "name": "numeric_code",
           "short_name": "numeric_code",
           "value_type": "PersistentMemo"
@@ -97,12 +97,12 @@
           "heading_text": null,
           "kind": {
             "Database": {
-              "table_alias": "",
-              "unique_id": ""
+              "table_alias": "countries_all_iso",
+              "unique_id": "53"
             }
           },
           "length": 65534,
-          "long_name": null,
+          "long_name": "countries_all_iso.internet_cctld",
           "name": "internet_cctld",
           "short_name": "internet_cctld",
           "value_type": "PersistentMemo"

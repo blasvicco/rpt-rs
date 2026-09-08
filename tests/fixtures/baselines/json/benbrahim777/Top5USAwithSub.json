@@ -17,12 +17,12 @@
           "heading_text": null,
           "kind": {
             "Database": {
-              "table_alias": "",
-              "unique_id": ""
+              "table_alias": "Customer",
+              "unique_id": "54"
             }
           },
           "length": 82,
-          "long_name": null,
+          "long_name": "Customer.Customer Name",
           "name": "Customer Name",
           "short_name": "Customer Name",
           "value_type": "String"
@@ -33,12 +33,12 @@
           "heading_text": null,
           "kind": {
             "Database": {
-              "table_alias": "",
-              "unique_id": ""
+              "table_alias": "Customer",
+              "unique_id": "64"
             }
           },
           "length": 62,
-          "long_name": null,
+          "long_name": "Customer.Country",
           "name": "Country",
           "short_name": "Country",
           "value_type": "String"
@@ -49,12 +49,12 @@
           "heading_text": null,
           "kind": {
             "Database": {
-              "table_alias": "",
-              "unique_id": ""
+              "table_alias": "Customer",
+              "unique_id": "63"
             }
           },
           "length": 62,
-          "long_name": null,
+          "long_name": "Customer.Region",
           "name": "Region",
           "short_name": "Region",
           "value_type": "String"
@@ -65,12 +65,12 @@
           "heading_text": null,
           "kind": {
             "Database": {
-              "table_alias": "",
-              "unique_id": ""
+              "table_alias": "Orders",
+              "unique_id": "75"
             }
           },
           "length": 8,
-          "long_name": null,
+          "long_name": "Orders.Order Amount",
           "name": "Order Amount",
           "short_name": "Order Amount",
           "value_type": "Currency"
@@ -12482,12 +12482,12 @@
                 "heading_text": null,
                 "kind": {
                   "Database": {
-                    "table_alias": "",
-                    "unique_id": ""
+                    "table_alias": "Customer",
+                    "unique_id": "54"
                   }
                 },
                 "length": 82,
-                "long_name": null,
+                "long_name": "Customer.Customer Name",
                 "name": "Customer Name",
                 "short_name": "Customer Name",
                 "value_type": "String"
@@ -12498,12 +12498,12 @@
                 "heading_text": null,
                 "kind": {
                   "Database": {
-                    "table_alias": "",
-                    "unique_id": ""
+                    "table_alias": "Customer",
+                    "unique_id": "63"
                   }
                 },
                 "length": 62,
-                "long_name": null,
+                "long_name": "Customer.Region",
                 "name": "Region",
                 "short_name": "Region",
                 "value_type": "String"
@@ -12514,12 +12514,12 @@
                 "heading_text": null,
                 "kind": {
                   "Database": {
-                    "table_alias": "",
-                    "unique_id": ""
+                    "table_alias": "Orders",
+                    "unique_id": "75"
                   }
                 },
                 "length": 8,
-                "long_name": null,
+                "long_name": "Orders.Order Amount",
                 "name": "Order Amount",
                 "short_name": "Order Amount",
                 "value_type": "Currency"
@@ -12530,12 +12530,12 @@
                 "heading_text": null,
                 "kind": {
                   "Database": {
-                    "table_alias": "",
-                    "unique_id": ""
+                    "table_alias": "Customer",
+                    "unique_id": "64"
                   }
                 },
                 "length": 62,
-                "long_name": null,
+                "long_name": "Customer.Country",
                 "name": "Country",
                 "short_name": "Country",
                 "value_type": "String"

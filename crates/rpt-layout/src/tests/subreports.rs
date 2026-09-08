@@ -605,3 +605,108 @@ fn flowed_subreport_shared_total_runs_once() {
         "the subreport must not run twice (would double the Shared total): {texts:?}"
     );
 }
+
+#[test]
+fn subreport_link_resolves_main_report_formula_field() {
+    // A subreport link's `main_report_field` can be a main-report FORMULA (`@Doubled`), not just a
+    // raw database field — the row only holds fetched columns, so binding it has to evaluate the
+    // formula rather than look it up on the row. Regression test for a bug where such a link was
+    // silently skipped (the row lookup always missed), leaving the subreport's parameter unbound.
+    use rpt_model::{
+        FieldDef, FieldKindData, Formula, FormulaField, Subreport, SubreportLink, SubreportObject,
+    };
+
+    // Subreport: one field bound to the linked parameter `{?Pm-@Doubled}`.
+    let mut param_field = FieldObject::default();
+    param_field.data_source = "?Pm-@Doubled".into();
+    param_field.ref_kind = FieldRefKind::Parameter;
+    param_field.value_type = FieldValueType::Number;
+    let mut param_obj = ReportObject::default();
+    param_obj.name = "Param".into();
+    param_obj.bounds = Rect {
+        left: Twips(0),
+        top: Twips(0),
+        width: Twips(3000),
+        height: Twips(240),
+    };
+    param_obj.kind = ReportObjectKind::Field(Box::new(param_field));
+
+    let mut sub = Report::default();
+    sub.report_definition.areas = vec![area(
+        AreaSectionKind::Detail,
+        vec![section(
+            AreaSectionKind::Detail,
+            "SubDetail",
+            300,
+            vec![param_obj],
+        )],
+    )];
+    sub.saved_data = Some(saved_data(
+        &[("s.dummy", FieldValueType::String)],
+        &[&["x"]],
+    ));
+    let mut sr = Subreport::default();
+    sr.name = "Sub".into();
+    sr.report = Box::new(sub);
+
+    // Main: one detail row with t.amt = 21, a formula `Doubled` = `{t.amt} * 2`, and a subreport
+    // object whose link routes the main report's `@Doubled` into the subreport's `Pm-@Doubled`
+    // parameter.
+    let mut sub_obj = ReportObject::default();
+    sub_obj.name = "SubObj".into();
+    sub_obj.bounds = Rect {
+        left: Twips(0),
+        top: Twips(0),
+        width: Twips(6000),
+        height: Twips(300),
+    };
+    let mut so = SubreportObject::default();
+    so.subreport_name = "Sub".into();
+    so.links = vec![SubreportLink {
+        main_report_field: "@Doubled".into(),
+        subreport_field: String::new(),
+        linked_parameter: Some("Pm-@Doubled".into()),
+    }];
+    sub_obj.kind = ReportObjectKind::Subreport(so);
+
+    let mut main = Report::default();
+    main.print_options.content_width = Twips(12240);
+    main.print_options.content_height = Twips(3000);
+    main.report_definition.areas = vec![area(
+        AreaSectionKind::Detail,
+        vec![section(
+            AreaSectionKind::Detail,
+            "MainDetail",
+            300,
+            vec![sub_obj],
+        )],
+    )];
+    main.subreports = vec![sr];
+    let mut doubled = FieldDef::default();
+    doubled.name = "Doubled".into();
+    doubled.kind = FieldKindData::Formula(FormulaField {
+        text: Formula("{t.amt} * 2".into()),
+        ..FormulaField::default()
+    });
+    main.data_definition.field_definitions = vec![doubled];
+
+    let saved = saved_data(&[("t.amt", FieldValueType::Number)], &[&["21"]]);
+    let ds = build_dataset(&SavedDataSource::new(&saved), &main.data_definition);
+    let formulas = rpt_data::compile_formulas(&main.data_definition);
+    let doc = layout(&main, &ds, &formulas);
+
+    let texts: Vec<String> = doc
+        .pages
+        .iter()
+        .flat_map(|p| &p.ops)
+        .filter_map(|op| match op {
+            DrawOp::Text(t) => Some(t.text.clone()),
+            _ => None,
+        })
+        .collect();
+    assert!(
+        texts.iter().any(|t| t.trim() == "42.00"),
+        "subreport should render the linked parameter fed from the main report's @Doubled \
+         formula (21 * 2 = 42), got {texts:?}"
+    );
+}

@@ -15,12 +15,12 @@
           "heading_text": null,
           "kind": {
             "Database": {
-              "table_alias": "",
-              "unique_id": ""
+              "table_alias": "Sales",
+              "unique_id": "48"
             }
           },
           "length": 65534,
-          "long_name": null,
+          "long_name": "Sales.Country",
           "name": "Country",
           "short_name": "Country",
           "value_type": "String"

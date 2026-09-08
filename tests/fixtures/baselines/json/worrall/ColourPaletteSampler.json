@@ -22,12 +22,12 @@
           "heading_text": null,
           "kind": {
             "Database": {
-              "table_alias": "",
-              "unique_id": ""
+              "table_alias": "web_colours",
+              "unique_id": "49"
             }
           },
           "length": 65534,
-          "long_name": null,
+          "long_name": "web_colours.name",
           "name": "name",
           "short_name": "name",
           "value_type": "PersistentMemo"
@@ -38,12 +38,12 @@
           "heading_text": null,
           "kind": {
             "Database": {
-              "table_alias": "",
-              "unique_id": ""
+              "table_alias": "web_colours",
+              "unique_id": "50"
             }
           },
           "length": 65534,
-          "long_name": null,
+          "long_name": "web_colours.hexcode",
           "name": "hexcode",
           "short_name": "hexcode",
           "value_type": "PersistentMemo"
@@ -54,12 +54,12 @@
           "heading_text": null,
           "kind": {
             "Database": {
-              "table_alias": "",
-              "unique_id": ""
+              "table_alias": "web_colours",
+              "unique_id": "51"
             }
           },
           "length": 4,
-          "long_name": null,
+          "long_name": "web_colours.rgb_red",
           "name": "rgb_red",
           "short_name": "rgb_red",
           "value_type": "Int32s"
@@ -70,12 +70,12 @@
           "heading_text": null,
           "kind": {
             "Database": {
-              "table_alias": "",
-              "unique_id": ""
+              "table_alias": "web_colours",
+              "unique_id": "52"
             }
           },
           "length": 4,
-          "long_name": null,
+          "long_name": "web_colours.rgb_green",
           "name": "rgb_green",
           "short_name": "rgb_green",
           "value_type": "Int32s"
@@ -86,12 +86,12 @@
           "heading_text": null,
           "kind": {
             "Database": {
-              "table_alias": "",
-              "unique_id": ""
+              "table_alias": "web_colours",
+              "unique_id": "53"
             }
           },
           "length": 4,
-          "long_name": null,
+          "long_name": "web_colours.rgb_blue",
           "name": "rgb_blue",
           "short_name": "rgb_blue",
           "value_type": "Int32s"

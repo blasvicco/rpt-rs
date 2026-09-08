@@ -15,12 +15,12 @@
           "heading_text": null,
           "kind": {
             "Database": {
-              "table_alias": "",
-              "unique_id": ""
+              "table_alias": "pct_probe3",
+              "unique_id": "52"
             }
           },
           "length": 162,
-          "long_name": null,
+          "long_name": "pct_probe3.region_name",
           "name": "region_name",
           "short_name": "region_name",
           "value_type": "String"
@@ -31,12 +31,12 @@
           "heading_text": null,
           "kind": {
             "Database": {
-              "table_alias": "",
-              "unique_id": ""
+              "table_alias": "pct_probe3",
+              "unique_id": "53"
             }
           },
           "length": 162,
-          "long_name": null,
+          "long_name": "pct_probe3.country_name",
           "name": "country_name",
           "short_name": "country_name",
           "value_type": "String"
@@ -47,12 +47,12 @@
           "heading_text": null,
           "kind": {
             "Database": {
-              "table_alias": "",
-              "unique_id": ""
+              "table_alias": "pct_probe3",
+              "unique_id": "54"
             }
           },
           "length": 162,
-          "long_name": null,
+          "long_name": "pct_probe3.city_name",
           "name": "city_name",
           "short_name": "city_name",
           "value_type": "String"
@@ -63,12 +63,12 @@
           "heading_text": null,
           "kind": {
             "Database": {
-              "table_alias": "",
-              "unique_id": ""
+              "table_alias": "pct_probe3",
+              "unique_id": "55"
             }
           },
           "length": 8,
-          "long_name": null,
+          "long_name": "pct_probe3.amount",
           "name": "amount",
           "short_name": "amount",
           "value_type": "Number"

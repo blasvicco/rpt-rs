@@ -15,12 +15,12 @@
           "heading_text": null,
           "kind": {
             "Database": {
-              "table_alias": "",
-              "unique_id": ""
+              "table_alias": "probe_nested_group3",
+              "unique_id": "52"
             }
           },
           "length": 82,
-          "long_name": null,
+          "long_name": "probe_nested_group3.region",
           "name": "region",
           "short_name": "region",
           "value_type": "String"
@@ -31,12 +31,12 @@
           "heading_text": null,
           "kind": {
             "Database": {
-              "table_alias": "",
-              "unique_id": ""
+              "table_alias": "probe_nested_group3",
+              "unique_id": "53"
             }
           },
           "length": 82,
-          "long_name": null,
+          "long_name": "probe_nested_group3.team",
           "name": "team",
           "short_name": "team",
           "value_type": "String"
@@ -47,12 +47,12 @@
           "heading_text": null,
           "kind": {
             "Database": {
-              "table_alias": "",
-              "unique_id": ""
+              "table_alias": "probe_nested_group3",
+              "unique_id": "54"
             }
           },
           "length": 82,
-          "long_name": null,
+          "long_name": "probe_nested_group3.rep",
           "name": "rep",
           "short_name": "rep",
           "value_type": "String"
@@ -63,12 +63,12 @@
           "heading_text": null,
           "kind": {
             "Database": {
-              "table_alias": "",
-              "unique_id": ""
+              "table_alias": "probe_nested_group3",
+              "unique_id": "55"
             }
           },
           "length": 8,
-          "long_name": null,
+          "long_name": "probe_nested_group3.sale_amount",
           "name": "sale_amount",
           "short_name": "sale_amount",
           "value_type": "Number"
@@ -79,12 +79,12 @@
           "heading_text": null,
           "kind": {
             "Database": {
-              "table_alias": "",
-              "unique_id": ""
+              "table_alias": "probe_nested_group3",
+              "unique_id": "51"
             }
           },
           "length": 4,
-          "long_name": null,
+          "long_name": "probe_nested_group3.id",
           "name": "id",
           "short_name": "id",
           "value_type": "Int32s"

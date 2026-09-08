@@ -15,12 +15,12 @@
           "heading_text": null,
           "kind": {
             "Database": {
-              "table_alias": "",
-              "unique_id": ""
+              "table_alias": "shipment",
+              "unique_id": "51"
             }
           },
           "length": 4,
-          "long_name": null,
+          "long_name": "shipment.shipment_id",
           "name": "shipment_id",
           "short_name": "shipment_id",
           "value_type": "Int32s"
@@ -31,12 +31,12 @@
           "heading_text": null,
           "kind": {
             "Database": {
-              "table_alias": "",
-              "unique_id": ""
+              "table_alias": "shipment",
+              "unique_id": "53"
             }
           },
           "length": 4,
-          "long_name": null,
+          "long_name": "shipment.carrier_id",
           "name": "carrier_id",
           "short_name": "carrier_id",
           "value_type": "Int32s"
@@ -47,12 +47,12 @@
           "heading_text": null,
           "kind": {
             "Database": {
-              "table_alias": "",
-              "unique_id": ""
+              "table_alias": "shipment",
+              "unique_id": "56"
             }
           },
           "length": 4,
-          "long_name": null,
+          "long_name": "shipment.mode_id",
           "name": "mode_id",
           "short_name": "mode_id",
           "value_type": "Int32s"
@@ -63,12 +63,12 @@
           "heading_text": null,
           "kind": {
             "Database": {
-              "table_alias": "",
-              "unique_id": ""
+              "table_alias": "shipment",
+              "unique_id": "58"
             }
           },
           "length": 4,
-          "long_name": null,
+          "long_name": "shipment.status_id",
           "name": "status_id",
           "short_name": "status_id",
           "value_type": "Int32s"
@@ -79,12 +79,12 @@
           "heading_text": null,
           "kind": {
             "Database": {
-              "table_alias": "",
-              "unique_id": ""
+              "table_alias": "shipment",
+              "unique_id": "59"
             }
           },
           "length": 4,
-          "long_name": null,
+          "long_name": "shipment.booked_date",
           "name": "booked_date",
           "short_name": "booked_date",
           "value_type": "Date"
@@ -95,12 +95,12 @@
           "heading_text": null,
           "kind": {
             "Database": {
-              "table_alias": "",
-              "unique_id": ""
+              "table_alias": "shipment",
+              "unique_id": "62"
             }
           },
           "length": 4,
-          "long_name": null,
+          "long_name": "shipment.planned_delivery",
           "name": "planned_delivery",
           "short_name": "planned_delivery",
           "value_type": "Date"
@@ -111,12 +111,12 @@
           "heading_text": null,
           "kind": {
             "Database": {
-              "table_alias": "",
-              "unique_id": ""
+              "table_alias": "shipment",
+              "unique_id": "63"
             }
           },
           "length": 4,
-          "long_name": null,
+          "long_name": "shipment.actual_delivery",
           "name": "actual_delivery",
           "short_name": "actual_delivery",
           "value_type": "Date"
@@ -127,12 +127,12 @@
           "heading_text": null,
           "kind": {
             "Database": {
-              "table_alias": "",
-              "unique_id": ""
+              "table_alias": "shipment",
+              "unique_id": "64"
             }
           },
           "length": 8,
-          "long_name": null,
+          "long_name": "shipment.weight_kg",
           "name": "weight_kg",
           "short_name": "weight_kg",
           "value_type": "Number"
@@ -143,12 +143,12 @@
           "heading_text": null,
           "kind": {
             "Database": {
-              "table_alias": "",
-              "unique_id": ""
+              "table_alias": "shipment",
+              "unique_id": "67"
             }
           },
           "length": 8,
-          "long_name": null,
+          "long_name": "shipment.freight_cost",
           "name": "freight_cost",
           "short_name": "freight_cost",
           "value_type": "Number"
@@ -4304,12 +4304,12 @@
                 "heading_text": null,
                 "kind": {
                   "Database": {
-                    "table_alias": "",
-                    "unique_id": ""
+                    "table_alias": "tracking_event",
+                    "unique_id": "52"
                   }
                 },
                 "length": 4,
-                "long_name": null,
+                "long_name": "tracking_event.shipment_id",
                 "name": "shipment_id",
                 "short_name": "shipment_id",
                 "value_type": "Int32s"
@@ -4320,12 +4320,12 @@
                 "heading_text": null,
                 "kind": {
                   "Database": {
-                    "table_alias": "",
-                    "unique_id": ""
+                    "table_alias": "tracking_event",
+                    "unique_id": "54"
                   }
                 },
                 "length": 8,
-                "long_name": null,
+                "long_name": "tracking_event.event_time",
                 "name": "event_time",
                 "short_name": "event_time",
                 "value_type": "DateTime"
@@ -4336,12 +4336,12 @@
                 "heading_text": null,
                 "kind": {
                   "Database": {
-                    "table_alias": "",
-                    "unique_id": ""
+                    "table_alias": "tracking_event",
+                    "unique_id": "55"
                   }
                 },
                 "length": 122,
-                "long_name": null,
+                "long_name": "tracking_event.event_type",
                 "name": "event_type",
                 "short_name": "event_type",
                 "value_type": "String"
@@ -4352,12 +4352,12 @@
                 "heading_text": null,
                 "kind": {
                   "Database": {
-                    "table_alias": "",
-                    "unique_id": ""
+                    "table_alias": "tracking_event",
+                    "unique_id": "56"
                   }
                 },
                 "length": 4,
-                "long_name": null,
+                "long_name": "tracking_event.facility_id",
                 "name": "facility_id",
                 "short_name": "facility_id",
                 "value_type": "Int32s"

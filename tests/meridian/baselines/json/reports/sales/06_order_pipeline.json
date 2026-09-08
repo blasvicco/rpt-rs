@@ -15,12 +15,12 @@
           "heading_text": null,
           "kind": {
             "Database": {
-              "table_alias": "",
-              "unique_id": ""
+              "table_alias": "order_status",
+              "unique_id": "64"
             }
           },
           "length": 122,
-          "long_name": null,
+          "long_name": "order_status.name",
           "name": "name",
           "short_name": "name",
           "value_type": "String"
@@ -31,12 +31,12 @@
           "heading_text": null,
           "kind": {
             "Database": {
-              "table_alias": "",
-              "unique_id": ""
+              "table_alias": "sales_order",
+              "unique_id": "51"
             }
           },
           "length": 4,
-          "long_name": null,
+          "long_name": "sales_order.order_id",
           "name": "order_id",
           "short_name": "order_id",
           "value_type": "Int32s"
@@ -47,12 +47,12 @@
           "heading_text": null,
           "kind": {
             "Database": {
-              "table_alias": "",
-              "unique_id": ""
+              "table_alias": "sales_order",
+              "unique_id": "53"
             }
           },
           "length": 4,
-          "long_name": null,
+          "long_name": "sales_order.order_date",
           "name": "order_date",
           "short_name": "order_date",
           "value_type": "Date"
@@ -63,12 +63,12 @@
           "heading_text": null,
           "kind": {
             "Database": {
-              "table_alias": "",
-              "unique_id": ""
+              "table_alias": "order_status",
+              "unique_id": "63"
             }
           },
           "length": 42,
-          "long_name": null,
+          "long_name": "order_status.code",
           "name": "code",
           "short_name": "code",
           "value_type": "String"
@@ -79,12 +79,12 @@
           "heading_text": null,
           "kind": {
             "Database": {
-              "table_alias": "",
-              "unique_id": ""
+              "table_alias": "sales_order",
+              "unique_id": "60"
             }
           },
           "length": 8,
-          "long_name": null,
+          "long_name": "sales_order.total_amount",
           "name": "total_amount",
           "short_name": "total_amount",
           "value_type": "Number"
@@ -95,12 +95,12 @@
           "heading_text": null,
           "kind": {
             "Database": {
-              "table_alias": "",
-              "unique_id": ""
+              "table_alias": "sales_order",
+              "unique_id": "56"
             }
           },
           "length": 14,
-          "long_name": null,
+          "long_name": "sales_order.currency_code",
           "name": "currency_code",
           "short_name": "currency_code",
           "value_type": "String"

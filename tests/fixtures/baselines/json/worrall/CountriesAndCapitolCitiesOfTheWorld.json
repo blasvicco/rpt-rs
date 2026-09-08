@@ -15,12 +15,12 @@
           "heading_text": null,
           "kind": {
             "Database": {
-              "table_alias": "",
-              "unique_id": ""
+              "table_alias": "vw_all_countries_with_capitals",
+              "unique_id": "48"
             }
           },
           "length": 4,
-          "long_name": null,
+          "long_name": "vw_all_countries_with_capitals.id",
           "name": "id",
           "short_name": "id",
           "value_type": "Int32s"
@@ -31,12 +31,12 @@
           "heading_text": null,
           "kind": {
             "Database": {
-              "table_alias": "",
-              "unique_id": ""
+              "table_alias": "vw_all_countries_with_capitals",
+              "unique_id": "49"
             }
           },
           "length": 65534,
-          "long_name": null,
+          "long_name": "vw_all_countries_with_capitals.name",
           "name": "name",
           "short_name": "name",
           "value_type": "PersistentMemo"
@@ -47,12 +47,12 @@
           "heading_text": null,
           "kind": {
             "Database": {
-              "table_alias": "",
-              "unique_id": ""
+              "table_alias": "vw_all_countries_with_capitals",
+              "unique_id": "50"
             }
           },
           "length": 65534,
-          "long_name": null,
+          "long_name": "vw_all_countries_with_capitals.capitals",
           "name": "capitals",
           "short_name": "capitals",
           "value_type": "PersistentMemo"

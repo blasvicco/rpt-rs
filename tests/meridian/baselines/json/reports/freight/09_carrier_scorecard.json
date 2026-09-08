@@ -19,12 +19,12 @@
           "heading_text": null,
           "kind": {
             "Database": {
-              "table_alias": "",
-              "unique_id": ""
+              "table_alias": "carrier_scorecard",
+              "unique_id": "52"
             }
           },
           "length": 4,
-          "long_name": null,
+          "long_name": "carrier_scorecard.carrier_id",
           "name": "carrier_id",
           "short_name": "carrier_id",
           "value_type": "Int32s"
@@ -35,12 +35,12 @@
           "heading_text": null,
           "kind": {
             "Database": {
-              "table_alias": "",
-              "unique_id": ""
+              "table_alias": "carrier",
+              "unique_id": "60"
             }
           },
           "length": 4,
-          "long_name": null,
+          "long_name": "carrier.carrier_id",
           "name": "carrier_id",
           "short_name": "carrier_id",
           "value_type": "Int32s"
@@ -51,12 +51,12 @@
           "heading_text": null,
           "kind": {
             "Database": {
-              "table_alias": "",
-              "unique_id": ""
+              "table_alias": "service_level",
+              "unique_id": "68"
             }
           },
           "length": 26,
-          "long_name": null,
+          "long_name": "service_level.code",
           "name": "code",
           "short_name": "code",
           "value_type": "String"
@@ -67,12 +67,12 @@
           "heading_text": null,
           "kind": {
             "Database": {
-              "table_alias": "",
-              "unique_id": ""
+              "table_alias": "carrier",
+              "unique_id": "61"
             }
           },
           "length": 242,
-          "long_name": null,
+          "long_name": "carrier.name",
           "name": "name",
           "short_name": "name",
           "value_type": "String"
@@ -83,12 +83,12 @@
           "heading_text": null,
           "kind": {
             "Database": {
-              "table_alias": "",
-              "unique_id": ""
+              "table_alias": "carrier_scorecard",
+              "unique_id": "54"
             }
           },
           "length": 8,
-          "long_name": null,
+          "long_name": "carrier_scorecard.on_time_pct",
           "name": "on_time_pct",
           "short_name": "on_time_pct",
           "value_type": "Number"
@@ -99,12 +99,12 @@
           "heading_text": null,
           "kind": {
             "Database": {
-              "table_alias": "",
-              "unique_id": ""
+              "table_alias": "carrier_scorecard",
+              "unique_id": "55"
             }
           },
           "length": 8,
-          "long_name": null,
+          "long_name": "carrier_scorecard.damage_rate",
           "name": "damage_rate",
           "short_name": "damage_rate",
           "value_type": "Number"
@@ -115,12 +115,12 @@
           "heading_text": null,
           "kind": {
             "Database": {
-              "table_alias": "",
-              "unique_id": ""
+              "table_alias": "carrier_scorecard",
+              "unique_id": "56"
             }
           },
           "length": 8,
-          "long_name": null,
+          "long_name": "carrier_scorecard.cost_index",
           "name": "cost_index",
           "short_name": "cost_index",
           "value_type": "Number"
@@ -131,12 +131,12 @@
           "heading_text": null,
           "kind": {
             "Database": {
-              "table_alias": "",
-              "unique_id": ""
+              "table_alias": "carrier_scorecard",
+              "unique_id": "57"
             }
           },
           "length": 8,
-          "long_name": null,
+          "long_name": "carrier_scorecard.capacity_utilization",
           "name": "capacity_utilization",
           "short_name": "capacity_utilization",
           "value_type": "Number"
@@ -147,12 +147,12 @@
           "heading_text": null,
           "kind": {
             "Database": {
-              "table_alias": "",
-              "unique_id": ""
+              "table_alias": "carrier_scorecard",
+              "unique_id": "58"
             }
           },
           "length": 4,
-          "long_name": null,
+          "long_name": "carrier_scorecard.claims_count",
           "name": "claims_count",
           "short_name": "claims_count",
           "value_type": "Int32s"
@@ -163,12 +163,12 @@
           "heading_text": null,
           "kind": {
             "Database": {
-              "table_alias": "",
-              "unique_id": ""
+              "table_alias": "carrier_scorecard",
+              "unique_id": "51"
             }
           },
           "length": 4,
-          "long_name": null,
+          "long_name": "carrier_scorecard.scorecard_id",
           "name": "scorecard_id",
           "short_name": "scorecard_id",
           "value_type": "Int32s"
@@ -179,12 +179,12 @@
           "heading_text": null,
           "kind": {
             "Database": {
-              "table_alias": "",
-              "unique_id": ""
+              "table_alias": "carrier_scorecard",
+              "unique_id": "53"
             }
           },
           "length": 4,
-          "long_name": null,
+          "long_name": "carrier_scorecard.period_month",
           "name": "period_month",
           "short_name": "period_month",
           "value_type": "Date"
@@ -195,12 +195,12 @@
           "heading_text": null,
           "kind": {
             "Database": {
-              "table_alias": "",
-              "unique_id": ""
+              "table_alias": "service_level",
+              "unique_id": "70"
             }
           },
           "length": 4,
-          "long_name": null,
+          "long_name": "service_level.target_transit_days",
           "name": "target_transit_days",
           "short_name": "target_transit_days",
           "value_type": "Int32s"

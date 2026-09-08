@@ -15,12 +15,12 @@
           "heading_text": null,
           "kind": {
             "Database": {
-              "table_alias": "",
-              "unique_id": ""
+              "table_alias": "region",
+              "unique_id": "104"
             }
           },
           "length": 162,
-          "long_name": null,
+          "long_name": "region.name",
           "name": "name",
           "short_name": "name",
           "value_type": "String"
@@ -31,12 +31,12 @@
           "heading_text": null,
           "kind": {
             "Database": {
-              "table_alias": "",
-              "unique_id": ""
+              "table_alias": "country",
+              "unique_id": "99"
             }
           },
           "length": 242,
-          "long_name": null,
+          "long_name": "country.name",
           "name": "name",
           "short_name": "name",
           "value_type": "String"
@@ -47,12 +47,12 @@
           "heading_text": null,
           "kind": {
             "Database": {
-              "table_alias": "",
-              "unique_id": ""
+              "table_alias": "employee",
+              "unique_id": "106"
             }
           },
           "length": 4,
-          "long_name": null,
+          "long_name": "employee.employee_id",
           "name": "employee_id",
           "short_name": "employee_id",
           "value_type": "Int32s"
@@ -63,12 +63,12 @@
           "heading_text": null,
           "kind": {
             "Database": {
-              "table_alias": "",
-              "unique_id": ""
+              "table_alias": "employee",
+              "unique_id": "109"
             }
           },
           "length": 122,
-          "long_name": null,
+          "long_name": "employee.first_name",
           "name": "first_name",
           "short_name": "first_name",
           "value_type": "String"
@@ -79,12 +79,12 @@
           "heading_text": null,
           "kind": {
             "Database": {
-              "table_alias": "",
-              "unique_id": ""
+              "table_alias": "employee",
+              "unique_id": "110"
             }
           },
           "length": 122,
-          "long_name": null,
+          "long_name": "employee.last_name",
           "name": "last_name",
           "short_name": "last_name",
           "value_type": "String"
@@ -95,12 +95,12 @@
           "heading_text": null,
           "kind": {
             "Database": {
-              "table_alias": "",
-              "unique_id": ""
+              "table_alias": "order_line",
+              "unique_id": "68"
             }
           },
           "length": 8,
-          "long_name": null,
+          "long_name": "order_line.line_amount",
           "name": "line_amount",
           "short_name": "line_amount",
           "value_type": "Number"
@@ -111,12 +111,12 @@
           "heading_text": null,
           "kind": {
             "Database": {
-              "table_alias": "",
-              "unique_id": ""
+              "table_alias": "sales_order",
+              "unique_id": "51"
             }
           },
           "length": 4,
-          "long_name": null,
+          "long_name": "sales_order.order_id",
           "name": "order_id",
           "short_name": "order_id",
           "value_type": "Int32s"
@@ -127,12 +127,12 @@
           "heading_text": null,
           "kind": {
             "Database": {
-              "table_alias": "",
-              "unique_id": ""
+              "table_alias": "sales_order",
+              "unique_id": "53"
             }
           },
           "length": 4,
-          "long_name": null,
+          "long_name": "sales_order.order_date",
           "name": "order_date",
           "short_name": "order_date",
           "value_type": "Date"
@@ -143,12 +143,12 @@
           "heading_text": null,
           "kind": {
             "Database": {
-              "table_alias": "",
-              "unique_id": ""
+              "table_alias": "customer",
+              "unique_id": "73"
             }
           },
           "length": 242,
-          "long_name": null,
+          "long_name": "customer.name",
           "name": "name",
           "short_name": "name",
           "value_type": "String"
@@ -159,12 +159,12 @@
           "heading_text": null,
           "kind": {
             "Database": {
-              "table_alias": "",
-              "unique_id": ""
+              "table_alias": "order_line",
+              "unique_id": "65"
             }
           },
           "length": 4,
-          "long_name": null,
+          "long_name": "order_line.quantity",
           "name": "quantity",
           "short_name": "quantity",
           "value_type": "Int32s"
@@ -175,12 +175,12 @@
           "heading_text": null,
           "kind": {
             "Database": {
-              "table_alias": "",
-              "unique_id": ""
+              "table_alias": "region",
+              "unique_id": "103"
             }
           },
           "length": 34,
-          "long_name": null,
+          "long_name": "region.code",
           "name": "code",
           "short_name": "code",
           "value_type": "String"
@@ -191,12 +191,12 @@
           "heading_text": null,
           "kind": {
             "Database": {
-              "table_alias": "",
-              "unique_id": ""
+              "table_alias": "employee",
+              "unique_id": "111"
             }
           },
           "length": 162,
-          "long_name": null,
+          "long_name": "employee.title",
           "name": "title",
           "short_name": "title",
           "value_type": "String"
@@ -7007,12 +7007,12 @@
                 "heading_text": null,
                 "kind": {
                   "Database": {
-                    "table_alias": "",
-                    "unique_id": ""
+                    "table_alias": "product",
+                    "unique_id": "70"
                   }
                 },
                 "length": 4,
-                "long_name": null,
+                "long_name": "product.product_id",
                 "name": "product_id",
                 "short_name": "product_id",
                 "value_type": "Int32s"
@@ -7023,12 +7023,12 @@
                 "heading_text": null,
                 "kind": {
                   "Database": {
-                    "table_alias": "",
-                    "unique_id": ""
+                    "table_alias": "product",
+                    "unique_id": "75"
                   }
                 },
                 "length": 322,
-                "long_name": null,
+                "long_name": "product.name",
                 "name": "name",
                 "short_name": "name",
                 "value_type": "String"
@@ -7039,12 +7039,12 @@
                 "heading_text": null,
                 "kind": {
                   "Database": {
-                    "table_alias": "",
-                    "unique_id": ""
+                    "table_alias": "order_line",
+                    "unique_id": "57"
                   }
                 },
                 "length": 8,
-                "long_name": null,
+                "long_name": "order_line.line_amount",
                 "name": "line_amount",
                 "short_name": "line_amount",
                 "value_type": "Number"
@@ -7055,12 +7055,12 @@
                 "heading_text": null,
                 "kind": {
                   "Database": {
-                    "table_alias": "",
-                    "unique_id": ""
+                    "table_alias": "sales_order",
+                    "unique_id": "65"
                   }
                 },
                 "length": 4,
-                "long_name": null,
+                "long_name": "sales_order.sales_rep_id",
                 "name": "sales_rep_id",
                 "short_name": "sales_rep_id",
                 "value_type": "Int32s"

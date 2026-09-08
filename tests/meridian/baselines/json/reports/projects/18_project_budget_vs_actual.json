@@ -17,12 +17,12 @@
           "heading_text": null,
           "kind": {
             "Database": {
-              "table_alias": "",
-              "unique_id": ""
+              "table_alias": "project",
+              "unique_id": "51"
             }
           },
           "length": 4,
-          "long_name": null,
+          "long_name": "project.project_id",
           "name": "project_id",
           "short_name": "project_id",
           "value_type": "Int32s"
@@ -33,12 +33,12 @@
           "heading_text": null,
           "kind": {
             "Database": {
-              "table_alias": "",
-              "unique_id": ""
+              "table_alias": "project_task",
+              "unique_id": "68"
             }
           },
           "length": 8,
-          "long_name": null,
+          "long_name": "project_task.pct_complete",
           "name": "pct_complete",
           "short_name": "pct_complete",
           "value_type": "Number"
@@ -49,12 +49,12 @@
           "heading_text": null,
           "kind": {
             "Database": {
-              "table_alias": "",
-              "unique_id": ""
+              "table_alias": "project",
+              "unique_id": "52"
             }
           },
           "length": 322,
-          "long_name": null,
+          "long_name": "project.name",
           "name": "name",
           "short_name": "name",
           "value_type": "String"
@@ -65,12 +65,12 @@
           "heading_text": null,
           "kind": {
             "Database": {
-              "table_alias": "",
-              "unique_id": ""
+              "table_alias": "project",
+              "unique_id": "61"
             }
           },
           "length": 4,
-          "long_name": null,
+          "long_name": "project.status_id",
           "name": "status_id",
           "short_name": "status_id",
           "value_type": "Int32s"
@@ -81,12 +81,12 @@
           "heading_text": null,
           "kind": {
             "Database": {
-              "table_alias": "",
-              "unique_id": ""
+              "table_alias": "project",
+              "unique_id": "59"
             }
           },
           "length": 8,
-          "long_name": null,
+          "long_name": "project.budget",
           "name": "budget",
           "short_name": "budget",
           "value_type": "Number"
@@ -97,12 +97,12 @@
           "heading_text": null,
           "kind": {
             "Database": {
-              "table_alias": "",
-              "unique_id": ""
+              "table_alias": "project",
+              "unique_id": "60"
             }
           },
           "length": 14,
-          "long_name": null,
+          "long_name": "project.currency_code",
           "name": "currency_code",
           "short_name": "currency_code",
           "value_type": "String"
@@ -113,12 +113,12 @@
           "heading_text": null,
           "kind": {
             "Database": {
-              "table_alias": "",
-              "unique_id": ""
+              "table_alias": "project",
+              "unique_id": "56"
             }
           },
           "length": 4,
-          "long_name": null,
+          "long_name": "project.start_date",
           "name": "start_date",
           "short_name": "start_date",
           "value_type": "Date"
@@ -129,12 +129,12 @@
           "heading_text": null,
           "kind": {
             "Database": {
-              "table_alias": "",
-              "unique_id": ""
+              "table_alias": "project",
+              "unique_id": "57"
             }
           },
           "length": 4,
-          "long_name": null,
+          "long_name": "project.planned_end_date",
           "name": "planned_end_date",
           "short_name": "planned_end_date",
           "value_type": "Date"
@@ -145,12 +145,12 @@
           "heading_text": null,
           "kind": {
             "Database": {
-              "table_alias": "",
-              "unique_id": ""
+              "table_alias": "project",
+              "unique_id": "58"
             }
           },
           "length": 4,
-          "long_name": null,
+          "long_name": "project.actual_end_date",
           "name": "actual_end_date",
           "short_name": "actual_end_date",
           "value_type": "Date"
@@ -161,12 +161,12 @@
           "heading_text": null,
           "kind": {
             "Database": {
-              "table_alias": "",
-              "unique_id": ""
+              "table_alias": "project_task",
+              "unique_id": "65"
             }
           },
           "length": 322,
-          "long_name": null,
+          "long_name": "project_task.name",
           "name": "name",
           "short_name": "name",
           "value_type": "String"
@@ -177,12 +177,12 @@
           "heading_text": null,
           "kind": {
             "Database": {
-              "table_alias": "",
-              "unique_id": ""
+              "table_alias": "project_task",
+              "unique_id": "71"
             }
           },
           "length": 82,
-          "long_name": null,
+          "long_name": "project_task.phase",
           "name": "phase",
           "short_name": "phase",
           "value_type": "String"
@@ -193,12 +193,12 @@
           "heading_text": null,
           "kind": {
             "Database": {
-              "table_alias": "",
-              "unique_id": ""
+              "table_alias": "project_task",
+              "unique_id": "66"
             }
           },
           "length": 4,
-          "long_name": null,
+          "long_name": "project_task.start_date",
           "name": "start_date",
           "short_name": "start_date",
           "value_type": "Date"
@@ -209,12 +209,12 @@
           "heading_text": null,
           "kind": {
             "Database": {
-              "table_alias": "",
-              "unique_id": ""
+              "table_alias": "project_task",
+              "unique_id": "67"
             }
           },
           "length": 4,
-          "long_name": null,
+          "long_name": "project_task.end_date",
           "name": "end_date",
           "short_name": "end_date",
           "value_type": "Date"
@@ -225,12 +225,12 @@
           "heading_text": null,
           "kind": {
             "Database": {
-              "table_alias": "",
-              "unique_id": ""
+              "table_alias": "project_task",
+              "unique_id": "64"
             }
           },
           "length": 4,
-          "long_name": null,
+          "long_name": "project_task.project_id",
           "name": "project_id",
           "short_name": "project_id",
           "value_type": "Int32s"

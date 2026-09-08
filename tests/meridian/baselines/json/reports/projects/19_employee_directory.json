@@ -15,12 +15,12 @@
           "heading_text": null,
           "kind": {
             "Database": {
-              "table_alias": "",
-              "unique_id": ""
+              "table_alias": "employee",
+              "unique_id": "49"
             }
           },
           "length": 4,
-          "long_name": null,
+          "long_name": "employee.employee_id",
           "name": "employee_id",
           "short_name": "employee_id",
           "value_type": "Int32s"
@@ -31,12 +31,12 @@
           "heading_text": null,
           "kind": {
             "Database": {
-              "table_alias": "",
-              "unique_id": ""
+              "table_alias": "employee",
+              "unique_id": "51"
             }
           },
           "length": 4,
-          "long_name": null,
+          "long_name": "employee.manager_id",
           "name": "manager_id",
           "short_name": "manager_id",
           "value_type": "Int32s"
@@ -47,12 +47,12 @@
           "heading_text": null,
           "kind": {
             "Database": {
-              "table_alias": "",
-              "unique_id": ""
+              "table_alias": "employee",
+              "unique_id": "59"
             }
           },
           "length": -1,
-          "long_name": null,
+          "long_name": "employee.photo",
           "name": "photo",
           "short_name": "photo",
           "value_type": "Blob"
@@ -63,12 +63,12 @@
           "heading_text": null,
           "kind": {
             "Database": {
-              "table_alias": "",
-              "unique_id": ""
+              "table_alias": "employee",
+              "unique_id": "52"
             }
           },
           "length": 122,
-          "long_name": null,
+          "long_name": "employee.first_name",
           "name": "first_name",
           "short_name": "first_name",
           "value_type": "String"
@@ -79,12 +79,12 @@
           "heading_text": null,
           "kind": {
             "Database": {
-              "table_alias": "",
-              "unique_id": ""
+              "table_alias": "employee",
+              "unique_id": "53"
             }
           },
           "length": 122,
-          "long_name": null,
+          "long_name": "employee.last_name",
           "name": "last_name",
           "short_name": "last_name",
           "value_type": "String"
@@ -95,12 +95,12 @@
           "heading_text": null,
           "kind": {
             "Database": {
-              "table_alias": "",
-              "unique_id": ""
+              "table_alias": "employee",
+              "unique_id": "54"
             }
           },
           "length": 162,
-          "long_name": null,
+          "long_name": "employee.title",
           "name": "title",
           "short_name": "title",
           "value_type": "String"
@@ -111,12 +111,12 @@
           "heading_text": null,
           "kind": {
             "Database": {
-              "table_alias": "",
-              "unique_id": ""
+              "table_alias": "employee",
+              "unique_id": "55"
             }
           },
           "length": 4,
-          "long_name": null,
+          "long_name": "employee.hire_date",
           "name": "hire_date",
           "short_name": "hire_date",
           "value_type": "Date"
@@ -127,12 +127,12 @@
           "heading_text": null,
           "kind": {
             "Database": {
-              "table_alias": "",
-              "unique_id": ""
+              "table_alias": "employee",
+              "unique_id": "58"
             }
           },
           "length": 4,
-          "long_name": null,
+          "long_name": "employee.region_id",
           "name": "region_id",
           "short_name": "region_id",
           "value_type": "Int32s"
@@ -143,12 +143,12 @@
           "heading_text": null,
           "kind": {
             "Database": {
-              "table_alias": "",
-              "unique_id": ""
+              "table_alias": "employee",
+              "unique_id": "56"
             }
           },
           "length": 8,
-          "long_name": null,
+          "long_name": "employee.salary",
           "name": "salary",
           "short_name": "salary",
           "value_type": "Number"
@@ -159,12 +159,12 @@
           "heading_text": null,
           "kind": {
             "Database": {
-              "table_alias": "",
-              "unique_id": ""
+              "table_alias": "employee",
+              "unique_id": "57"
             }
           },
           "length": 14,
-          "long_name": null,
+          "long_name": "employee.currency_code",
           "name": "currency_code",
           "short_name": "currency_code",
           "value_type": "String"

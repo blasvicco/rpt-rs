@@ -24,7 +24,9 @@ pub(crate) fn build_typed_record_tree(stream: &RecordStream) -> Vec<Node> {
 pub(super) fn build_node(node: &RecordNode, logical: &[u8]) -> Node {
     match node.rtype {
         FIELD_DEFINITION => {
-            if let Some(field) = build_field(node, logical) {
+            // No report/database context here — this is the record-type-generic typed-tree walk,
+            // built off one stream in isolation — so `long_name`/`table_alias` are left unresolved.
+            if let Some(field) = build_field(node, logical, None) {
                 return Node::FieldDef(Box::new(field));
             }
             unknown_node(node, logical)

@@ -17,12 +17,12 @@
           "heading_text": null,
           "kind": {
             "Database": {
-              "table_alias": "",
-              "unique_id": ""
+              "table_alias": "Employee",
+              "unique_id": "54"
             }
           },
           "length": 42,
-          "long_name": null,
+          "long_name": "Employee.Last Name",
           "name": "Last Name",
           "short_name": "Last Name",
           "value_type": "String"
@@ -33,12 +33,12 @@
           "heading_text": null,
           "kind": {
             "Database": {
-              "table_alias": "",
-              "unique_id": ""
+              "table_alias": "Employee",
+              "unique_id": "55"
             }
           },
           "length": 22,
-          "long_name": null,
+          "long_name": "Employee.First Name",
           "name": "First Name",
           "short_name": "First Name",
           "value_type": "String"
@@ -49,12 +49,12 @@
           "heading_text": null,
           "kind": {
             "Database": {
-              "table_alias": "",
-              "unique_id": ""
+              "table_alias": "Orders",
+              "unique_id": "75"
             }
           },
           "length": 8,
-          "long_name": null,
+          "long_name": "Orders.Order Amount",
           "name": "Order Amount",
           "short_name": "Order Amount",
           "value_type": "Currency"

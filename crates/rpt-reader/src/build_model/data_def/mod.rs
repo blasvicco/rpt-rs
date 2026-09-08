@@ -38,6 +38,7 @@ pub(super) fn build_data_definition(
     tree: &[RecordNode],
     logical: &[u8],
     field_types: &std::collections::HashMap<String, crate::model::FieldValueType>,
+    field_index: &std::collections::BTreeMap<i32, (String, crate::model::DbFieldDef)>,
 ) -> DataDefinition {
     let mut field_definitions = Vec::new();
     let mut groups = Vec::new();
@@ -57,7 +58,7 @@ pub(super) fn build_data_definition(
     for root in tree {
         root.walk(&mut |node| match node.rtype {
             FIELD_DEFINITION => {
-                if let Some(f) = build_field(node, logical) {
+                if let Some(f) = build_field(node, logical, Some(field_index)) {
                     field_definitions.push(f);
                 }
             }

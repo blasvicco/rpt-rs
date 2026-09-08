@@ -15,12 +15,12 @@
           "heading_text": null,
           "kind": {
             "Database": {
-              "table_alias": "",
-              "unique_id": ""
+              "table_alias": "Product",
+              "unique_id": "52"
             }
           },
           "length": 4,
-          "long_name": null,
+          "long_name": "Product.Product ID",
           "name": "Product ID",
           "short_name": "Product ID",
           "value_type": "Int32s"
@@ -31,12 +31,12 @@
           "heading_text": null,
           "kind": {
             "Database": {
-              "table_alias": "",
-              "unique_id": ""
+              "table_alias": "Product",
+              "unique_id": "53"
             }
           },
           "length": 102,
-          "long_name": null,
+          "long_name": "Product.Product Name",
           "name": "Product Name",
           "short_name": "Product Name",
           "value_type": "String"
@@ -47,12 +47,12 @@
           "heading_text": null,
           "kind": {
             "Database": {
-              "table_alias": "",
-              "unique_id": ""
+              "table_alias": "Product",
+              "unique_id": "54"
             }
           },
           "length": 42,
-          "long_name": null,
+          "long_name": "Product.Color",
           "name": "Color",
           "short_name": "Color",
           "value_type": "String"
@@ -63,12 +63,12 @@
           "heading_text": null,
           "kind": {
             "Database": {
-              "table_alias": "",
-              "unique_id": ""
+              "table_alias": "Product",
+              "unique_id": "55"
             }
           },
           "length": 22,
-          "long_name": null,
+          "long_name": "Product.Size",
           "name": "Size",
           "short_name": "Size",
           "value_type": "String"
@@ -79,12 +79,12 @@
           "heading_text": null,
           "kind": {
             "Database": {
-              "table_alias": "",
-              "unique_id": ""
+              "table_alias": "Product",
+              "unique_id": "57"
             }
           },
           "length": 8,
-          "long_name": null,
+          "long_name": "Product.Price (SRP)",
           "name": "Price (SRP)",
           "short_name": "Price (SRP)",
           "value_type": "Currency"

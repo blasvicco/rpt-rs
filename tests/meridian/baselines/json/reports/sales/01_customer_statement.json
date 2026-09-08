@@ -15,12 +15,12 @@
           "heading_text": null,
           "kind": {
             "Database": {
-              "table_alias": "",
-              "unique_id": ""
+              "table_alias": "customer",
+              "unique_id": "51"
             }
           },
           "length": 4,
-          "long_name": null,
+          "long_name": "customer.customer_id",
           "name": "customer_id",
           "short_name": "customer_id",
           "value_type": "Int32s"
@@ -31,12 +31,12 @@
           "heading_text": null,
           "kind": {
             "Database": {
-              "table_alias": "",
-              "unique_id": ""
+              "table_alias": "customer",
+              "unique_id": "55"
             }
           },
           "length": 66,
-          "long_name": null,
+          "long_name": "customer.account_code",
           "name": "account_code",
           "short_name": "account_code",
           "value_type": "String"
@@ -47,12 +47,12 @@
           "heading_text": null,
           "kind": {
             "Database": {
-              "table_alias": "",
-              "unique_id": ""
+              "table_alias": "customer",
+              "unique_id": "54"
             }
           },
           "length": 242,
-          "long_name": null,
+          "long_name": "customer.name",
           "name": "name",
           "short_name": "name",
           "value_type": "String"
@@ -63,12 +63,12 @@
           "heading_text": null,
           "kind": {
             "Database": {
-              "table_alias": "",
-              "unique_id": ""
+              "table_alias": "city",
+              "unique_id": "66"
             }
           },
           "length": 242,
-          "long_name": null,
+          "long_name": "city.name",
           "name": "name",
           "short_name": "name",
           "value_type": "String"
@@ -79,12 +79,12 @@
           "heading_text": null,
           "kind": {
             "Database": {
-              "table_alias": "",
-              "unique_id": ""
+              "table_alias": "province",
+              "unique_id": "73"
             }
           },
           "length": 26,
-          "long_name": null,
+          "long_name": "province.code",
           "name": "code",
           "short_name": "code",
           "value_type": "String"
@@ -95,12 +95,12 @@
           "heading_text": null,
           "kind": {
             "Database": {
-              "table_alias": "",
-              "unique_id": ""
+              "table_alias": "country",
+              "unique_id": "80"
             }
           },
           "length": 242,
-          "long_name": null,
+          "long_name": "country.name",
           "name": "name",
           "short_name": "name",
           "value_type": "String"
@@ -111,12 +111,12 @@
           "heading_text": null,
           "kind": {
             "Database": {
-              "table_alias": "",
-              "unique_id": ""
+              "table_alias": "invoice",
+              "unique_id": "91"
             }
           },
           "length": 8,
-          "long_name": null,
+          "long_name": "invoice.amount_gross",
           "name": "amount_gross",
           "short_name": "amount_gross",
           "value_type": "Number"
@@ -127,12 +127,12 @@
           "heading_text": null,
           "kind": {
             "Database": {
-              "table_alias": "",
-              "unique_id": ""
+              "table_alias": "invoice_payment_totals",
+              "unique_id": "100"
             }
           },
           "length": 8,
-          "long_name": null,
+          "long_name": "invoice_payment_totals.paid_total",
           "name": "paid_total",
           "short_name": "paid_total",
           "value_type": "Number"
@@ -143,12 +143,12 @@
           "heading_text": null,
           "kind": {
             "Database": {
-              "table_alias": "",
-              "unique_id": ""
+              "table_alias": "customer",
+              "unique_id": "56"
             }
           },
           "length": 8,
-          "long_name": null,
+          "long_name": "customer.credit_limit",
           "name": "credit_limit",
           "short_name": "credit_limit",
           "value_type": "Number"
@@ -159,12 +159,12 @@
           "heading_text": null,
           "kind": {
             "Database": {
-              "table_alias": "",
-              "unique_id": ""
+              "table_alias": "invoice",
+              "unique_id": "83"
             }
           },
           "length": 4,
-          "long_name": null,
+          "long_name": "invoice.invoice_id",
           "name": "invoice_id",
           "short_name": "invoice_id",
           "value_type": "Int32s"
@@ -175,12 +175,12 @@
           "heading_text": null,
           "kind": {
             "Database": {
-              "table_alias": "",
-              "unique_id": ""
+              "table_alias": "invoice",
+              "unique_id": "86"
             }
           },
           "length": 4,
-          "long_name": null,
+          "long_name": "invoice.invoice_date",
           "name": "invoice_date",
           "short_name": "invoice_date",
           "value_type": "Date"
@@ -191,12 +191,12 @@
           "heading_text": null,
           "kind": {
             "Database": {
-              "table_alias": "",
-              "unique_id": ""
+              "table_alias": "invoice",
+              "unique_id": "87"
             }
           },
           "length": 4,
-          "long_name": null,
+          "long_name": "invoice.due_date",
           "name": "due_date",
           "short_name": "due_date",
           "value_type": "Date"
@@ -207,12 +207,12 @@
           "heading_text": null,
           "kind": {
             "Database": {
-              "table_alias": "",
-              "unique_id": ""
+              "table_alias": "payment_status",
+              "unique_id": "96"
             }
           },
           "length": 122,
-          "long_name": null,
+          "long_name": "payment_status.name",
           "name": "name",
           "short_name": "name",
           "value_type": "String"
@@ -223,12 +223,12 @@
           "heading_text": null,
           "kind": {
             "Database": {
-              "table_alias": "",
-              "unique_id": ""
+              "table_alias": "invoice",
+              "unique_id": "88"
             }
           },
           "length": 14,
-          "long_name": null,
+          "long_name": "invoice.currency_code",
           "name": "currency_code",
           "short_name": "currency_code",
           "value_type": "String"
@@ -239,12 +239,12 @@
           "heading_text": null,
           "kind": {
             "Database": {
-              "table_alias": "",
-              "unique_id": ""
+              "table_alias": "invoice",
+              "unique_id": "85"
             }
           },
           "length": 4,
-          "long_name": null,
+          "long_name": "invoice.customer_id",
           "name": "customer_id",
           "short_name": "customer_id",
           "value_type": "Int32s"
@@ -255,12 +255,12 @@
           "heading_text": null,
           "kind": {
             "Database": {
-              "table_alias": "",
-              "unique_id": ""
+              "table_alias": "exchange_rate_latest",
+              "unique_id": "103"
             }
           },
           "length": 8,
-          "long_name": null,
+          "long_name": "exchange_rate_latest.rate_to_usd",
           "name": "rate_to_usd",
           "short_name": "rate_to_usd",
           "value_type": "Number"
@@ -10729,12 +10729,12 @@
                 "heading_text": null,
                 "kind": {
                   "Database": {
-                    "table_alias": "",
-                    "unique_id": ""
+                    "table_alias": "payment_status",
+                    "unique_id": "63"
                   }
                 },
                 "length": 42,
-                "long_name": null,
+                "long_name": "payment_status.code",
                 "name": "code",
                 "short_name": "code",
                 "value_type": "String"
@@ -10745,12 +10745,12 @@
                 "heading_text": null,
                 "kind": {
                   "Database": {
-                    "table_alias": "",
-                    "unique_id": ""
+                    "table_alias": "invoice",
+                    "unique_id": "55"
                   }
                 },
                 "length": 4,
-                "long_name": null,
+                "long_name": "invoice.due_date",
                 "name": "due_date",
                 "short_name": "due_date",
                 "value_type": "Date"
@@ -10761,12 +10761,12 @@
                 "heading_text": null,
                 "kind": {
                   "Database": {
-                    "table_alias": "",
-                    "unique_id": ""
+                    "table_alias": "invoice",
+                    "unique_id": "51"
                   }
                 },
                 "length": 4,
-                "long_name": null,
+                "long_name": "invoice.invoice_id",
                 "name": "invoice_id",
                 "short_name": "invoice_id",
                 "value_type": "Int32s"
@@ -10777,12 +10777,12 @@
                 "heading_text": null,
                 "kind": {
                   "Database": {
-                    "table_alias": "",
-                    "unique_id": ""
+                    "table_alias": "invoice",
+                    "unique_id": "54"
                   }
                 },
                 "length": 4,
-                "long_name": null,
+                "long_name": "invoice.invoice_date",
                 "name": "invoice_date",
                 "short_name": "invoice_date",
                 "value_type": "Date"
@@ -10793,12 +10793,12 @@
                 "heading_text": null,
                 "kind": {
                   "Database": {
-                    "table_alias": "",
-                    "unique_id": ""
+                    "table_alias": "invoice",
+                    "unique_id": "56"
                   }
                 },
                 "length": 14,
-                "long_name": null,
+                "long_name": "invoice.currency_code",
                 "name": "currency_code",
                 "short_name": "currency_code",
                 "value_type": "String"
@@ -10809,12 +10809,12 @@
                 "heading_text": null,
                 "kind": {
                   "Database": {
-                    "table_alias": "",
-                    "unique_id": ""
+                    "table_alias": "payment_status",
+                    "unique_id": "64"
                   }
                 },
                 "length": 122,
-                "long_name": null,
+                "long_name": "payment_status.name",
                 "name": "name",
                 "short_name": "name",
                 "value_type": "String"
@@ -10825,12 +10825,12 @@
                 "heading_text": null,
                 "kind": {
                   "Database": {
-                    "table_alias": "",
-                    "unique_id": ""
+                    "table_alias": "invoice",
+                    "unique_id": "59"
                   }
                 },
                 "length": 8,
-                "long_name": null,
+                "long_name": "invoice.amount_gross",
                 "name": "amount_gross",
                 "short_name": "amount_gross",
                 "value_type": "Number"
@@ -10841,12 +10841,12 @@
                 "heading_text": null,
                 "kind": {
                   "Database": {
-                    "table_alias": "",
-                    "unique_id": ""
+                    "table_alias": "invoice",
+                    "unique_id": "53"
                   }
                 },
                 "length": 4,
-                "long_name": null,
+                "long_name": "invoice.customer_id",
                 "name": "customer_id",
                 "short_name": "customer_id",
                 "value_type": "Int32s"

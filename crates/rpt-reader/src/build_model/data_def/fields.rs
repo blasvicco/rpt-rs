@@ -62,8 +62,20 @@ fn named_value_of(row: &Row) -> NamedValue {
 const STRING_VALUE_TYPE_CODE: i32 = 11;
 
 /// Decode a database field definition (`0x0073`): a `0x0072` wrapping the `0x0071` base, which is
-/// where the field's name, value type and length live.
-pub(in crate::build_model) fn build_field(node: &RecordNode, logical: &[u8]) -> Option<FieldDef> {
+/// where the field's name, value type and length live, plus the record's own `field_id` handle.
+///
+/// `field_index` — when supplied — resolves that handle back to the table it reads from: it is the
+/// same global field-id space the `QESession` stream's `0x0004 QeField` records use (see
+/// [`build_database`](crate::build_model::database::build_database)), so a hit fills in the qualified
+/// [`FieldDef::long_name`] and the owning [`DbField::table_alias`]/[`DbField::unique_id`] — otherwise
+/// left at their zero value (`None`/empty), matching this function's prior behaviour. `None` is for a
+/// caller with no database context (the typed-record-tree / `--full` export walk, which has no report
+/// to resolve against).
+pub(in crate::build_model) fn build_field(
+    node: &RecordNode,
+    logical: &[u8],
+    field_index: Option<&std::collections::BTreeMap<i32, (String, crate::model::DbFieldDef)>>,
+) -> Option<FieldDef> {
     let mut base = None;
     node.walk(&mut |n| {
         if base.is_none() && n.rtype == NAMED_VALUE {
@@ -74,12 +86,19 @@ pub(in crate::build_model) fn build_field(node: &RecordNode, logical: &[u8]) -> 
     if nv.name.is_empty() {
         return None;
     }
+    let row = row_of(node, logical, &ft::FIELD_DEFINITION);
+    let field_id = row.u("field_id") as i32;
+    let resolved = field_index.and_then(|idx| idx.get(&field_id));
     Some(FieldDef {
         name: nv.name.clone(),
         value_type: nv.value_type,
         length: nv.length,
         short_name: Some(nv.name),
-        kind: FieldKindData::Database(DbField::default()),
+        long_name: resolved.map(|(_, db)| db.long_name.clone().unwrap_or_default()),
+        kind: FieldKindData::Database(DbField {
+            table_alias: resolved.map(|(alias, _)| alias.clone()).unwrap_or_default(),
+            unique_id: resolved.map(|_| field_id.to_string()).unwrap_or_default(),
+        }),
         ..Default::default()
     })
 }
@@ -677,7 +696,7 @@ mod field_definition_tests {
             0xff, 0xff, 0xff, 0xff, // wide length
         ];
         let (logical, node) = db_field(&base);
-        let f = build_field(&node, &logical).expect("a named base record is a field");
+        let f = build_field(&node, &logical, None).expect("a named base record is a field");
         assert_eq!(f.name, "photo");
         assert_eq!(f.value_type, FieldValueType::Blob);
         assert_eq!(f.length, -1);

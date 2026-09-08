@@ -15,12 +15,12 @@
           "heading_text": null,
           "kind": {
             "Database": {
-              "table_alias": "",
-              "unique_id": ""
+              "table_alias": "underlay_probe2",
+              "unique_id": "52"
             }
           },
           "length": 82,
-          "long_name": null,
+          "long_name": "underlay_probe2.outer_key",
           "name": "outer_key",
           "short_name": "outer_key",
           "value_type": "String"
@@ -31,12 +31,12 @@
           "heading_text": null,
           "kind": {
             "Database": {
-              "table_alias": "",
-              "unique_id": ""
+              "table_alias": "underlay_probe2",
+              "unique_id": "53"
             }
           },
           "length": 82,
-          "long_name": null,
+          "long_name": "underlay_probe2.inner_key",
           "name": "inner_key",
           "short_name": "inner_key",
           "value_type": "String"
@@ -47,12 +47,12 @@
           "heading_text": null,
           "kind": {
             "Database": {
-              "table_alias": "",
-              "unique_id": ""
+              "table_alias": "underlay_probe2",
+              "unique_id": "54"
             }
           },
           "length": 82,
-          "long_name": null,
+          "long_name": "underlay_probe2.row_label",
           "name": "row_label",
           "short_name": "row_label",
           "value_type": "String"
