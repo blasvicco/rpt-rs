@@ -132,8 +132,11 @@ impl MultiColCursor {
 }
 
 impl<'a> Formatter<'a> {
-    /// Resolve a text/field object to its wrapped display lines (`None` for non-text objects). Wraps
-    /// only when the object has **Can-Grow** set (`obj.format.can_grow`) *and* the band allows growth
+    /// Resolve a text/field object to its wrapped display lines (`None` for non-text objects). A
+    /// **field** wraps whenever its own Word Wrap is on (`FieldFormat.string.enable_word_wrap`,
+    /// independent of Can Grow — a fixed-height field still wraps within its width, just overflows
+    /// past its height instead of growing). A **text**/**field-heading** object has no such toggle:
+    /// it wraps only when it has **Can-Grow** set (`obj.format.can_grow`) *and* the band allows growth
     /// (`allow_grow`); otherwise the box clips. Can-grow is inert in a page header/footer — a fixed
     /// repeating band — so those pass `allow_grow = false` (matching the native engine). Computed once
     /// per band so height and emitted runs agree.
@@ -150,13 +153,14 @@ impl<'a> Formatter<'a> {
         let mut currency = None;
         // `reading_order` (Text/FieldHeading only) sets the paragraph's base direction; `paragraphs`
         // carries per-paragraph indentation for a text object (fields/headings have none).
-        let (raw, font, color, kind, reading_order, paragraphs): (
+        let (raw, font, color, kind, reading_order, paragraphs, field_word_wrap): (
             _,
             _,
             _,
             _,
             _,
             Option<&[Paragraph]>,
+            bool,
         ) = match &obj.kind {
             ReportObjectKind::Field(f) => (
                 {
@@ -177,6 +181,13 @@ impl<'a> Formatter<'a> {
                 ObjectKind::Field,
                 ReadingOrder::LeftToRight,
                 None,
+                // A field's Word Wrap is its own explicit toggle (SDK `StringFormat.EnableWordWrap`),
+                // independent of Can Grow — a fixed-height field still wraps within its width, only
+                // overflowing past its height rather than growing to fit. Text/FieldHeading objects
+                // have no such toggle: their wrapping stays tied to Can Grow below.
+                f.format
+                    .as_ref()
+                    .is_some_and(|fmt| fmt.string.enable_word_wrap),
             ),
             ReportObjectKind::Text(t) => (
                 text_display(self.report, t, ctx, state, &self.locale, &self.diagnostics),
@@ -186,6 +197,7 @@ impl<'a> Formatter<'a> {
                 ObjectKind::Text,
                 t.reading_order,
                 Some(&t.paragraphs),
+                false,
             ),
             // A field heading is a static column-label text object: its literal is stored (needing
             // no row), drawn with its own font/color, so it resolves like a text object.
@@ -197,6 +209,7 @@ impl<'a> Formatter<'a> {
                 ObjectKind::Text,
                 h.reading_order,
                 None,
+                false,
             ),
             _ => return None,
         };
@@ -280,7 +293,7 @@ impl<'a> Formatter<'a> {
                 spaced = crate::text::SpacedLayout::new(self.text_layout, spacing);
                 &spaced
             };
-            let wrapped: Vec<String> = if obj.format.can_grow && allow_grow {
+            let wrapped: Vec<String> = if (obj.format.can_grow && allow_grow) || field_word_wrap {
                 // The first-line indent narrows where the first line breaks, not just where it sits:
                 // the first line wraps at `avail - first`, the rest at the paragraph's full `avail`.
                 wrap_first_line_indent(wrap_layout, seg, avail as f64, first as f64, &para_font)

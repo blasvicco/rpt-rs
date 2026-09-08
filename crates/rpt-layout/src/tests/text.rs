@@ -165,6 +165,68 @@ fn page_header_does_not_grow_can_grow_is_inert() {
 }
 
 #[test]
+fn field_word_wrap_wraps_without_can_grow() {
+    // A field's Word Wrap is its own toggle (SDK `StringFormat.EnableWordWrap`), independent of Can
+    // Grow: a fixed-height field still wraps within its width — it just overflows past its declared
+    // height instead of growing to fit. Regression test for a bug where wrapping was gated entirely
+    // behind Can Grow, so a non-growing field's long text rendered as one unwrapped, overflowing run.
+    use rpt_model::{FieldFormat, StringFieldFormat};
+
+    let mut narrow = db_field_object("Memo", "t.x", 0);
+    narrow.bounds = Rect {
+        left: Twips(100),
+        top: Twips(0),
+        width: Twips(1500),
+        height: Twips(240),
+    };
+    // can_grow stays false (the default) — only word_wrap is on.
+    if let ReportObjectKind::Field(f) = &mut narrow.kind {
+        f.format = Some(FieldFormat {
+            string: StringFieldFormat {
+                enable_word_wrap: true,
+                ..StringFieldFormat::default()
+            },
+            ..FieldFormat::default()
+        });
+    }
+
+    let mut report = Report::default();
+    report.print_options.content_width = Twips(12240);
+    report.print_options.content_height = Twips(15840);
+    report.report_definition.areas = vec![area(
+        AreaSectionKind::Detail,
+        vec![section(
+            AreaSectionKind::Detail,
+            "Details",
+            240,
+            vec![narrow],
+        )],
+    )];
+    let saved = saved_data(
+        &[("t.x", FieldValueType::String)],
+        &[&["the quick brown fox jumps over the lazy dog again"]],
+    );
+    let ds = build_dataset(&SavedDataSource::new(&saved), &report.data_definition);
+    let formulas = rpt_data::compile_formulas(&report.data_definition);
+    let doc = layout(&report, &ds, &formulas);
+
+    let runs = text_runs(&doc);
+    assert!(
+        runs.len() > 1,
+        "a word-wrapped field should produce more than one line, got {}",
+        runs.len()
+    );
+    // Distinct lines stack vertically past the object's own 240-twip design height — it overflows
+    // rather than growing (can_grow is false), but it still wraps instead of running off as one line.
+    let distinct_tops: std::collections::BTreeSet<i32> =
+        runs.iter().map(|r| r.bounds.top.0).collect();
+    assert!(
+        *distinct_tops.iter().last().unwrap() > 0,
+        "wrapped lines should stack at increasing offsets"
+    );
+}
+
+#[test]
 fn left_indent_shifts_run_and_reduces_width() {
     let runs = runs_for_object(indented_text("Lbl", "ID", 72, 0, 0));
     assert_eq!(runs.len(), 1);
