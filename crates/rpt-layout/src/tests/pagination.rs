@@ -1398,3 +1398,50 @@ fn a_group_carried_over_a_page_break_counts_against_the_next_page_cap() {
         "group B's remaining rows and the whole of group C"
     );
 }
+
+#[test]
+fn section_visibility_formula_overrides_a_statically_suppressed_section() {
+    // A section can be statically suppressed (the Section Expert's Suppress checkbox) while also
+    // carrying a Section_Visibility conditional-suppress formula meant to selectively un-suppress it
+    // per record — the common "hidden unless the formula says otherwise" authoring pattern. The
+    // formula must win, exactly as Object_Visibility already overrides an object's static suppress
+    // (place.rs::emit_object) — regression test for a bug where the static flag short-circuited before
+    // the formula was ever evaluated.
+    let mut detail = section(
+        AreaSectionKind::Detail,
+        "Details",
+        300,
+        vec![db_field_object("Cell", "t.x", 0)],
+    );
+    detail.format.base.suppress = true;
+    detail.condition_formulas = vec![("Section_Visibility".into(), "{t.x} <> 1".into())];
+
+    let mut report = Report::default();
+    report.print_options.content_width = Twips(12240);
+    report.print_options.content_height = Twips(15840);
+    report.report_definition.areas = vec![area(AreaSectionKind::Detail, vec![detail])];
+
+    let saved = saved_data(&[("t.x", FieldValueType::Number)], &[&["1"], &["2"]]);
+    let ds = build_dataset(&SavedDataSource::new(&saved), &report.data_definition);
+    let formulas = rpt_data::compile_formulas(&report.data_definition);
+    let doc = layout(&report, &ds, &formulas);
+
+    let texts: Vec<String> = doc
+        .pages
+        .iter()
+        .flat_map(|p| &p.ops)
+        .filter_map(|op| match op {
+            DrawOp::Text(t) => Some(t.text.clone()),
+            _ => None,
+        })
+        .collect();
+    assert!(
+        texts.iter().any(|t| t.trim() == "1.00"),
+        "the record where Section_Visibility evaluates false must still print despite the section's \
+         static suppress flag, got {texts:?}"
+    );
+    assert!(
+        !texts.iter().any(|t| t.trim() == "2.00"),
+        "the record where Section_Visibility evaluates true stays suppressed, got {texts:?}"
+    );
+}

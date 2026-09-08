@@ -31,6 +31,9 @@ pub fn parse_number_picture(picture: &str) -> Option<NumberFormat> {
     let use_thousands = int_part.contains(',');
     // Leading zero iff the integer part contains a `0` placeholder.
     let leading_zero = int_part.contains('0');
+    // Minimum integer width = the count of `0` placeholders (each is a mandatory digit, padded with
+    // `0` if the value doesn't reach it) — `"00000000"` pads to 8 digits, `"###"` pads to none.
+    let min_int_digits = int_part.chars().filter(|c| *c == '0').count() as u32;
 
     // Decimal places = count of digit placeholders after the point.
     let decimals = frac_part
@@ -47,6 +50,7 @@ pub fn parse_number_picture(picture: &str) -> Option<NumberFormat> {
         decimals,
         use_thousands,
         leading_zero,
+        min_int_digits,
         negative: NegativeStyle::LeadingMinus,
         ..NumberFormat::default()
     })
@@ -80,6 +84,18 @@ mod tests {
         let bare = parse_number_picture("#.##").unwrap();
         assert!(!bare.use_thousands);
         assert!(!bare.leading_zero);
+    }
+
+    #[test]
+    fn zero_padding_pads_to_the_placeholder_count() {
+        // A run of `0` placeholders is a mandatory-digit, zero-padded minimum width (a fixed-width
+        // sequence number), not just the single-leading-zero `leading_zero` flag.
+        assert_eq!(fmt(647.0, "00000000").as_deref(), Some("00000647"));
+        assert_eq!(fmt(0.0, "000").as_deref(), Some("000"));
+        // A value already wider than the placeholder count is never truncated.
+        assert_eq!(fmt(123_456_789.0, "0000").as_deref(), Some("123456789"));
+        // `#` placeholders do not count toward the minimum width.
+        assert_eq!(fmt(7.0, "###").as_deref(), Some("7"));
     }
 
     #[test]

@@ -151,6 +151,7 @@ impl Locale {
             decimal_sep: self.decimal_sep,
             negative: NegativeStyle::LeadingMinus,
             leading_zero: true,
+            min_int_digits: 0,
             suppress_if_zero: false,
             reserve_sign: false,
             reverse_sign: false,
@@ -438,6 +439,10 @@ pub struct NumberFormat {
     pub negative: NegativeStyle,
     /// Show a leading zero for values in (-1, 1) (`0.50` vs `.50`).
     pub leading_zero: bool,
+    /// Minimum digit count for the integer part, left-padded with `0` (Crystal picture strings like
+    /// `"00000000"`, a fixed-width sequence number). `0` means no minimum beyond the value's own
+    /// digits.
+    pub min_int_digits: u32,
     /// Render an empty string when the value rounds to zero (SDK `EnableSuppressIfZero`).
     pub suppress_if_zero: bool,
     /// Pad a positive value with a space in each character cell its negative form would occupy, so
@@ -464,6 +469,7 @@ impl Default for NumberFormat {
             decimal_sep: '.',
             negative: NegativeStyle::LeadingMinus,
             leading_zero: true,
+            min_int_digits: 0,
             suppress_if_zero: false,
             reserve_sign: false,
             reverse_sign: false,
@@ -604,6 +610,9 @@ pub fn format_number(value: f64, spec: &NumberFormat) -> String {
     let frac_part = (scaled % scale) as u128;
 
     let mut int_str = int_part.to_string();
+    if int_str.len() < spec.min_int_digits as usize {
+        int_str = format!("{int_str:0>width$}", width = spec.min_int_digits as usize);
+    }
     if !spec.leading_zero && int_part == 0 && spec.decimals > 0 {
         int_str.clear();
     } else if spec.use_thousands {

@@ -347,24 +347,22 @@ impl<'a> Formatter<'a> {
         state: &ResolveState,
         underlay_end: Option<UnderlayEnd>,
     ) -> bool {
-        if section.format.base.suppress {
+        // A conditional visibility formula, when present, overrides the static suppress flag — the
+        // same precedence as object-level Object_Visibility (place.rs::emit_object): a
+        // Section_Visibility formula lets a statically-suppressed section (the common "hidden unless
+        // the formula says otherwise" authoring pattern) still print per record. Evaluated on a probe
+        // context (the incoming record) so a suppressed band forces no page break and fires no side
+        // effects.
+        let empty = Row::default();
+        let probe = self.context(row.unwrap_or(&empty), state);
+        let suppressed = crate::resolve::cond_bool(
+            &section.condition_formulas,
+            crate::resolve::cond::SECTION_VISIBILITY,
+            Some(&probe),
+        )
+        .unwrap_or(section.format.base.suppress);
+        if suppressed {
             return false;
-        }
-        // A Section_Visibility condition suppresses the whole band per record, like the static flag.
-        // Evaluated on a probe context (the incoming record) so a suppressed band forces no page
-        // break and fires no side effects, matching the static path above.
-        if !section.condition_formulas.is_empty() {
-            let empty = Row::default();
-            let probe = self.context(row.unwrap_or(&empty), state);
-            if crate::resolve::cond_bool(
-                &section.condition_formulas,
-                crate::resolve::cond::SECTION_VISIBILITY,
-                Some(&probe),
-            )
-            .unwrap_or(false)
-            {
-                return false;
-            }
         }
         // NewPageBefore on this band, or a deferred NewPageAfter from the previous band, starts a
         // fresh page — but not when we are already at the top of one (that would leave a blank page).
