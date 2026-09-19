@@ -614,6 +614,211 @@ fn picture_drawn_into_its_object_box() {
     );
 }
 
+/// A caller-supplied `object_visibility` override reaches inside a section that is both statically
+/// `Suppress`-ed and marked `Underlay Following Sections` — the "watermark" idiom
+/// [`crate::Formatter::object_suppressed`]'s doc comment describes — hiding one object without
+/// disabling the underlay paint-through for its siblings. `section_visibility` cannot do this: forcing
+/// the whole section visible/hidden is all-or-nothing, but `object_visibility` reaches a single object
+/// inside it. Mirrors a real SAP B1 invoice template's AFIP tax-notice section (a logo field plus two
+/// certificate pictures, all underlay-painted).
+#[test]
+fn object_visibility_override_hides_one_object_in_a_suppressed_underlay_section() {
+    use crate::{layout_scoped, ApproxLayout, Locale};
+    use std::collections::BTreeMap;
+
+    let logo = text_object("Logo", "LOGO_TEXT", 0);
+
+    let mut cert1 = ReportObject::default();
+    cert1.name = "Cert1".into();
+    cert1.bounds = Rect {
+        left: Twips(100),
+        top: Twips(300),
+        width: Twips(2000),
+        height: Twips(1000),
+    };
+    let mut p1 = rpt_model::PictureObject::default();
+    p1.data = vec![0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a];
+    cert1.kind = ReportObjectKind::Picture(p1);
+
+    let mut cert2 = ReportObject::default();
+    cert2.name = "Cert2".into();
+    cert2.bounds = Rect {
+        left: Twips(100),
+        top: Twips(1400),
+        width: Twips(2000),
+        height: Twips(1000),
+    };
+    let mut p2 = rpt_model::PictureObject::default();
+    p2.data = vec![0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a];
+    cert2.kind = ReportObjectKind::Picture(p2);
+
+    let mut afip = section(
+        AreaSectionKind::ReportHeader,
+        "Afip",
+        2400,
+        vec![logo, cert1, cert2],
+    );
+    afip.format.base.suppress = true;
+    afip.format.underlay_section = true;
+    afip.format.suppress_if_blank = true;
+
+    let mut report = Report::default();
+    report.report_definition.areas = vec![area(AreaSectionKind::ReportHeader, vec![afip])];
+
+    let empty = SavedData::default();
+    let ds = build_dataset(&SavedDataSource::new(&empty), &report.data_definition);
+    let formulas = rpt_data::compile_formulas(&report.data_definition);
+
+    let has_logo = |doc: &rpt_pages::PagedDocument| {
+        doc.pages
+            .iter()
+            .flat_map(|p| &p.ops)
+            .any(|op| matches!(op, DrawOp::Text(t) if t.text == "LOGO_TEXT"))
+    };
+    let image_count = |doc: &rpt_pages::PagedDocument| {
+        doc.pages
+            .iter()
+            .flat_map(|p| &p.ops)
+            .filter(|op| matches!(op, DrawOp::Image(_)))
+            .count()
+    };
+
+    let without_override = layout_scoped(
+        &report,
+        &ds,
+        &formulas,
+        Box::new(ApproxLayout),
+        None,
+        Locale::default(),
+        None,
+        None,
+    );
+    assert!(
+        has_logo(&without_override),
+        "sanity: the suppressed+underlay section still paints its objects, logo included"
+    );
+    assert_eq!(
+        image_count(&without_override),
+        2,
+        "sanity: both certificate pictures render absent any override"
+    );
+
+    let overrides = BTreeMap::from([("Logo".to_string(), false)]);
+    let with_override = layout_scoped(
+        &report,
+        &ds,
+        &formulas,
+        Box::new(ApproxLayout),
+        None,
+        Locale::default(),
+        None,
+        Some(&overrides),
+    );
+    assert!(
+        !has_logo(&with_override),
+        "object_visibility=false for the logo must hide it"
+    );
+    assert_eq!(
+        image_count(&with_override),
+        2,
+        "sibling certificate pictures must still render, untouched by the logo's override"
+    );
+}
+
+/// Hiding a non-text object (a picture/blob field) via `object_visibility` must not perturb the
+/// section's `band_height` or pagination: `band_plans_and_height` only grows a band for a `can-grow`
+/// **text** plan, and a suppressed object is never consulted there (only at emission, in
+/// `place::emit_object`) — so the same report laid out with and without the override must produce
+/// identical page counts and identical positions for everything else in the section.
+#[test]
+fn object_visibility_hidden_picture_does_not_perturb_band_height_or_pagination() {
+    use crate::{layout_scoped, ApproxLayout, Locale};
+    use std::collections::BTreeMap;
+
+    fn build(overrides: Option<&BTreeMap<String, bool>>) -> rpt_pages::PagedDocument {
+        let mut pic = ReportObject::default();
+        pic.name = "Blob".into();
+        pic.bounds = Rect {
+            left: Twips(100),
+            top: Twips(0),
+            width: Twips(2000),
+            height: Twips(1000),
+        };
+        let mut p = rpt_model::PictureObject::default();
+        p.data = vec![0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a];
+        pic.kind = ReportObjectKind::Picture(p);
+
+        let mut row = text_object("Row", "line", 0);
+        row.bounds.top = Twips(1000);
+
+        let details = section(AreaSectionKind::Detail, "Details", 1300, vec![pic, row]);
+
+        let mut report = Report::default();
+        report.print_options.content_width = Twips(12240);
+        // Small page: 2 rows of 1300 twips fit (2600), the 3rd of 3 records spills to a second page.
+        report.print_options.content_height = Twips(3000);
+        report.report_definition.areas = vec![area(AreaSectionKind::Detail, vec![details])];
+
+        let saved = numeric_rows(3);
+        let ds = build_dataset(&SavedDataSource::new(&saved), &report.data_definition);
+        let formulas = rpt_data::compile_formulas(&report.data_definition);
+        layout_scoped(
+            &report,
+            &ds,
+            &formulas,
+            Box::new(ApproxLayout),
+            None,
+            Locale::default(),
+            None,
+            overrides,
+        )
+    }
+
+    let without_override = build(None);
+    let overrides = BTreeMap::from([("Blob".to_string(), false)]);
+    let with_override = build(Some(&overrides));
+
+    assert!(
+        without_override.pages.len() > 1,
+        "sanity: the report premise actually paginates"
+    );
+    assert_eq!(
+        without_override.pages.len(),
+        with_override.pages.len(),
+        "hiding a non-text object must not change the page count"
+    );
+
+    let row_tops = |doc: &rpt_pages::PagedDocument| -> Vec<i32> {
+        doc.pages
+            .iter()
+            .flat_map(|p| page_text_tops(p, "line"))
+            .collect()
+    };
+    assert_eq!(
+        row_tops(&without_override),
+        row_tops(&with_override),
+        "every row's position must be identical with or without the override"
+    );
+
+    let image_count = |doc: &rpt_pages::PagedDocument| {
+        doc.pages
+            .iter()
+            .flat_map(|p| &p.ops)
+            .filter(|op| matches!(op, DrawOp::Image(_)))
+            .count()
+    };
+    assert_eq!(
+        image_count(&without_override),
+        3,
+        "sanity: the picture renders once per record absent any override"
+    );
+    assert_eq!(
+        image_count(&with_override),
+        0,
+        "the override must actually have suppressed the picture"
+    );
+}
+
 #[test]
 fn group_footers_pair_to_header_levels_by_name_not_position() {
     // Header levels (outermost first): region → level 0, order_date → level 1.
