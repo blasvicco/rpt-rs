@@ -25,6 +25,7 @@ use rpt_data::{
 };
 use rpt_pages::PagedDocument;
 use rpt_reader::model::Report;
+use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
 
 pub use rpt_data::{DateTimeSpecials, Parameters, ScopeData};
@@ -244,6 +245,33 @@ pub struct RenderOptions<'a> {
     /// ([`render_dataset_with`]), which brings whatever metrics source it was built on — the
     /// approximate layout reads no fonts at all.
     pub fonts: FontSource,
+    /// Per-section visibility override, keyed by the section's stored name
+    /// (`rpt_model::Section::name`): `true` forces it visible, `false` forces it hidden, ahead of
+    /// its own static `suppress` flag or `Section_Visibility` formula — this takes absolute
+    /// precedence over both. A name absent from the map defers to the report's own precedence
+    /// (unchanged behavior). Default: `None` (no override), the same "`Some` replaces wholesale,
+    /// `None` defers to the document" shape as [`Semantics::artifact_sections`].
+    ///
+    /// Section names are not namespaced between the main report and its subreports, or between
+    /// sibling subreports — an override applies wherever that name occurs anywhere in the report
+    /// tree. Forcing a normally-suppressed section visible can interact with pagination the report
+    /// was never authored to show (e.g. content sharing an "Underlay Following Sections" span with
+    /// it) — check the actual rendered output, not just that the section now appears.
+    pub section_visibility: Option<BTreeMap<String, bool>>,
+    /// Per-object visibility override, keyed by the object's stored name (`rpt_model::ReportObject::name`):
+    /// `true` forces it visible, `false` forces it hidden, ahead of its own static `suppress` flag or
+    /// `Object_Visibility` formula — this takes absolute precedence over both, the same shape as
+    /// [`Self::section_visibility`]. A name absent from the map defers to the report's own precedence.
+    ///
+    /// This is the lever for a section that is itself correctly suppressed but still bleeds content
+    /// through as a background layer via "Underlay Following Sections" (`Suppress` + `Underlay`
+    /// together is a standard Crystal idiom for a watermark-style section) — `section_visibility`
+    /// cannot silence one unwanted object in an underlay-carrier section without also disabling the
+    /// underlay for everything else sharing it, since the section is already suppressed; this
+    /// override reaches the individual object instead. Object names are not namespaced between
+    /// sections, the main report and its subreports, or siblings — an override applies wherever that
+    /// name occurs anywhere in the report tree.
+    pub object_visibility: Option<BTreeMap<String, bool>>,
 }
 
 impl std::fmt::Debug for RenderOptions<'_> {
@@ -255,6 +283,8 @@ impl std::fmt::Debug for RenderOptions<'_> {
             .field("scope", &self.scope.map(|_| "..").unwrap_or("None"))
             .field("as_of", &self.as_of)
             .field("fonts", &self.fonts)
+            .field("section_visibility", &self.section_visibility)
+            .field("object_visibility", &self.object_visibility)
             .finish()
     }
 }
@@ -286,18 +316,39 @@ fn render_options(report: &Report, opts: RenderOptions) -> PagedDocument {
         scope,
         as_of,
         fonts,
+        section_visibility,
+        object_visibility,
     } = opts;
     // Resolve the render's as-of instant once, so the record pipeline and the layout pass share a
     // single fixed value for `CurrentDate`/… (deterministic across the whole render).
     let as_of = as_of.unwrap_or_else(default_as_of);
+    let section_visibility = section_visibility.as_ref();
+    let object_visibility = object_visibility.as_ref();
     match datasource {
         // A caller-supplied dataset was built outside this function, so its pipeline diagnostics (if
         // any were collected) belong to that caller.
-        RenderSource::Dataset(dataset) => {
-            layout_dataset(report, dataset, scope, locale, as_of, fonts)
-        }
+        RenderSource::Dataset(dataset) => layout_dataset(
+            report,
+            dataset,
+            scope,
+            locale,
+            as_of,
+            fonts,
+            section_visibility,
+            object_visibility,
+        ),
         RenderSource::Rows(source) => {
-            build_and_lay_out(report, source, params, scope, locale, as_of, fonts)
+            build_and_lay_out(
+                report,
+                source,
+                params,
+                scope,
+                locale,
+                as_of,
+                fonts,
+                section_visibility,
+                object_visibility,
+            )
         }
         RenderSource::Saved => {
             let saved_holder;
@@ -308,7 +359,17 @@ fn render_options(report: &Report, opts: RenderOptions) -> PagedDocument {
                 }
                 None => &EmptySource,
             };
-            build_and_lay_out(report, source, params, scope, locale, as_of, fonts)
+            build_and_lay_out(
+                report,
+                source,
+                params,
+                scope,
+                locale,
+                as_of,
+                fonts,
+                section_visibility,
+                object_visibility,
+            )
         }
     }
 }
@@ -320,6 +381,7 @@ fn render_options(report: &Report, opts: RenderOptions) -> PagedDocument {
 /// errors resolves to `Null`. Without a sink those failures are simply invisible — a report can render
 /// zero rows from non-empty data and report success. Attaching the sink here, on the one path every
 /// render takes, is what makes them reach [`PagedDocument::diagnostics`] and so the caller.
+#[allow(clippy::too_many_arguments)]
 fn build_and_lay_out(
     report: &Report,
     source: &dyn RowSource,
@@ -328,6 +390,8 @@ fn build_and_lay_out(
     locale: Locale,
     as_of: DateTimeSpecials,
     fonts: FontSource,
+    section_visibility: Option<&BTreeMap<String, bool>>,
+    object_visibility: Option<&BTreeMap<String, bool>>,
 ) -> PagedDocument {
     let sink = CollectingSink::new();
     let dataset = build_dataset_opts(
@@ -340,7 +404,16 @@ fn build_and_lay_out(
             ..Default::default()
         },
     );
-    let mut doc = layout_dataset(report, &dataset, scope, locale, as_of, fonts);
+    let mut doc = layout_dataset(
+        report,
+        &dataset,
+        scope,
+        locale,
+        as_of,
+        fonts,
+        section_visibility,
+        object_visibility,
+    );
     // Pipeline diagnostics come first: a selection failure explains an empty page, so it should be
     // read before the layout consequences of that emptiness.
     let mut diagnostics = rpt_layout::diagnostics::from_evals(&sink.into_diagnostics());
@@ -369,6 +442,7 @@ pub fn default_as_of() -> DateTimeSpecials {
 
 /// Compile the report's formulas and lay out a [`Dataset`] with the default text layout — the last
 /// step shared by every non-BYO-layout entry point.
+#[allow(clippy::too_many_arguments)]
 fn layout_dataset(
     report: &Report,
     dataset: &Dataset,
@@ -376,6 +450,8 @@ fn layout_dataset(
     locale: Locale,
     as_of: DateTimeSpecials,
     fonts: FontSource,
+    section_visibility: Option<&BTreeMap<String, bool>>,
+    object_visibility: Option<&BTreeMap<String, bool>>,
 ) -> PagedDocument {
     let formulas = compile_formulas_at(&report.data_definition, as_of);
     rpt_layout::layout_scoped(
@@ -385,6 +461,8 @@ fn layout_dataset(
         default_text_layout(fonts),
         scope,
         locale,
+        section_visibility,
+        object_visibility,
     )
 }
 
@@ -404,7 +482,9 @@ pub fn render_dataset_with(
 ) -> PagedDocument {
     let as_of = as_of.unwrap_or_else(default_as_of);
     let formulas = compile_formulas_at(&report.data_definition, as_of);
-    rpt_layout::layout_scoped(report, dataset, &formulas, text_layout, scope, locale)
+    rpt_layout::layout_scoped(
+        report, dataset, &formulas, text_layout, scope, locale, None, None,
+    )
 }
 
 /// The default text layout: font-accurate cosmic-text over the face library `fonts` names.

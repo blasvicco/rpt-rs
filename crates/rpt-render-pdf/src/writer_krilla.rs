@@ -14,8 +14,8 @@ use crate::tagging::{self, ArtifactKind, UnitKind};
 use crate::{ArtifactRole, Conformance, PdfError, PdfOptions, Timestamp};
 use rpt_model::{Color, Rect, Twips};
 use rpt_pages::{
-    DrawOp, EllipseOp, FontSpec, ImageAsset, ImageFit, ImageOp, LineOp, Page, PageSize, PolygonOp,
-    RectOp, SectionInfo, TextAlign, TextRun,
+    DrawOp, EllipseOp, FontSpec, ImageAsset, ImageFit, ImageOp, LineOp, LineStyle, Page, PageSize,
+    PolygonOp, RectOp, SectionInfo, TextAlign, TextRun,
 };
 use rpt_text::{FontDb, FontSource};
 use std::collections::{BTreeMap, BTreeSet, HashMap};
@@ -28,7 +28,7 @@ use krilla::image::Image;
 use krilla::metadata::{DateTime, Metadata};
 use krilla::outline::Outline;
 use krilla::page::PageSettings;
-use krilla::paint::Stroke;
+use krilla::paint::{LineCap, Stroke, StrokeDash};
 use krilla::surface::Surface;
 use krilla::tagging::{
     Artifact, ArtifactType, ContentTag, Node, SpanTag, Tag, TagGroup, TagKind, TagTree,
@@ -591,13 +591,25 @@ fn artifact_type(kind: ArtifactKind) -> ArtifactType {
     }
 }
 
-fn stroke_for(color: Color, width_twips: i32) -> Stroke {
+fn stroke_for(color: Color, width_twips: i32, style: LineStyle) -> Stroke {
     let (rgb, opacity) = rgb_alpha(color);
+    let width = (pt(width_twips) as f32).max(MIN_STROKE_PT as f32);
+    // `Dashed`/`Dotted` are a dash array on an otherwise ordinary stroke — a dot is a zero-length
+    // dash with a round cap, the standard PDF/SVG trick for round dots (a `Butt`-capped zero dash
+    // draws nothing). `Single`/`Double` stay a plain stroke (`Double`'s second parallel line is
+    // drawn as its own op upstream, not a dash pattern).
+    let (line_cap, dash) = match style {
+        LineStyle::Dashed => (LineCap::Butt, Some((vec![width * 3.0, width * 2.0], 0.0))),
+        LineStyle::Dotted => (LineCap::Round, Some((vec![0.0, width * 2.0], 0.0))),
+        LineStyle::Single | LineStyle::Double => (LineCap::Butt, None),
+    };
     Stroke {
         paint: rgb.into(),
         // A stored width of 0 (hairline) still needs to render; clamp to a thin visible line.
-        width: (pt(width_twips) as f32).max(MIN_STROKE_PT as f32),
+        width,
+        line_cap,
         opacity,
+        dash: dash.map(|(array, offset)| StrokeDash { array, offset }),
         ..Stroke::default()
     }
 }
@@ -644,7 +656,7 @@ fn draw_rect(surface: &mut Surface, r: &RectOp) {
         .as_ref()
         .map(|f| fill_of(surface, f, Bounds::of(&r.bounds)));
     surface.set_fill(fill);
-    surface.set_stroke(r.stroke.map(|s| stroke_for(s.color, s.width.0)));
+    surface.set_stroke(r.stroke.map(|s| stroke_for(s.color, s.width.0, s.style)));
     surface.draw_path(&path);
 }
 
@@ -678,7 +690,7 @@ fn draw_ellipse(surface: &mut Surface, e: &EllipseOp) {
         .as_ref()
         .map(|f| fill_of(surface, f, Bounds::of(&e.bounds)));
     surface.set_fill(fill);
-    surface.set_stroke(e.stroke.map(|s| stroke_for(s.color, s.width.0)));
+    surface.set_stroke(e.stroke.map(|s| stroke_for(s.color, s.width.0, s.style)));
     surface.draw_path(&path);
 }
 
@@ -690,7 +702,7 @@ fn draw_line(surface: &mut Surface, l: &LineOp) {
         return;
     };
     surface.set_fill(None);
-    surface.set_stroke(Some(stroke_for(l.stroke.color, l.stroke.width.0)));
+    surface.set_stroke(Some(stroke_for(l.stroke.color, l.stroke.width.0, l.stroke.style)));
     surface.draw_path(&path);
 }
 
@@ -719,7 +731,7 @@ fn draw_polygon(surface: &mut Surface, p: &PolygonOp) {
         fill_of(surface, f, bounds)
     });
     surface.set_fill(fill);
-    surface.set_stroke(p.stroke.map(|s| stroke_for(s.color, s.width.0)));
+    surface.set_stroke(p.stroke.map(|s| stroke_for(s.color, s.width.0, s.style)));
     surface.draw_path(&path);
 }
 

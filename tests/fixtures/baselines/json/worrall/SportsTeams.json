@@ -507,6 +507,13 @@
                           "runs": [
                             {
                               "character_spacing": 0,
+                              "color": {
+                                "a": 255,
+                                "b": 0,
+                                "g": 0,
+                                "r": 0
+                              },
+                              "condition_formulas": [],
                               "field_ref": null,
                               "font": {
                                 "bold": true,
@@ -638,6 +645,13 @@
                           "runs": [
                             {
                               "character_spacing": 0,
+                              "color": {
+                                "a": 255,
+                                "b": 255,
+                                "g": 255,
+                                "r": 255
+                              },
+                              "condition_formulas": [],
                               "field_ref": null,
                               "font": {
                                 "bold": false,
@@ -800,6 +814,13 @@
                           "runs": [
                             {
                               "character_spacing": 0,
+                              "color": {
+                                "a": 255,
+                                "b": 255,
+                                "g": 255,
+                                "r": 255
+                              },
+                              "condition_formulas": [],
                               "field_ref": null,
                               "font": {
                                 "bold": false,
@@ -907,6 +928,13 @@
                           "runs": [
                             {
                               "character_spacing": 0,
+                              "color": {
+                                "a": 255,
+                                "b": 255,
+                                "g": 255,
+                                "r": 255
+                              },
+                              "condition_formulas": [],
                               "field_ref": null,
                               "font": {
                                 "bold": false,
@@ -1014,6 +1042,13 @@
                           "runs": [
                             {
                               "character_spacing": 0,
+                              "color": {
+                                "a": 255,
+                                "b": 255,
+                                "g": 255,
+                                "r": 255
+                              },
+                              "condition_formulas": [],
                               "field_ref": null,
                               "font": {
                                 "bold": false,
@@ -1121,6 +1156,13 @@
                           "runs": [
                             {
                               "character_spacing": 0,
+                              "color": {
+                                "a": 255,
+                                "b": 255,
+                                "g": 255,
+                                "r": 255
+                              },
+                              "condition_formulas": [],
                               "field_ref": null,
                               "font": {
                                 "bold": false,
@@ -1228,6 +1270,13 @@
                           "runs": [
                             {
                               "character_spacing": 0,
+                              "color": {
+                                "a": 255,
+                                "b": 255,
+                                "g": 255,
+                                "r": 255
+                              },
+                              "condition_formulas": [],
                               "field_ref": null,
                               "font": {
                                 "bold": false,
@@ -1335,6 +1384,13 @@
                           "runs": [
                             {
                               "character_spacing": 0,
+                              "color": {
+                                "a": 255,
+                                "b": 255,
+                                "g": 255,
+                                "r": 255
+                              },
+                              "condition_formulas": [],
                               "field_ref": null,
                               "font": {
                                 "bold": false,

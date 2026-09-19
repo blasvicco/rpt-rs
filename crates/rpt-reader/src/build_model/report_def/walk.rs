@@ -63,6 +63,10 @@ pub(super) struct RdWalk<'a> {
     /// that run's `0x08`, and the first color after an opener likewise wins. Re-armed alongside
     /// [`Self::font_set`].
     color_set: bool,
+    /// Whether the current object has taken its font conditional-format formulas from a run. The
+    /// first run's `0x0101` (present or not — an empty first run still counts) wins, the same policy
+    /// as [`Self::color_set`]. Re-armed alongside it.
+    font_conditions_set: bool,
     /// Whether the current field still awaits the first of the two numeric-format records it
     /// streams — the currency slot, which precedes the number slot. Re-armed at every object opener.
     numeric_currency_slot_pending: bool,
@@ -87,6 +91,7 @@ impl<'a> RdWalk<'a> {
             pending_band_kind: None,
             font_set: false,
             color_set: false,
+            font_conditions_set: false,
             numeric_currency_slot_pending: false,
             in_aux_area: false,
         }
@@ -104,6 +109,7 @@ impl<'a> RdWalk<'a> {
             // A new object begins a fresh run of attribute records: re-arm the first-wins captures.
             self.font_set = false;
             self.color_set = false;
+            self.font_conditions_set = false;
             self.numeric_currency_slot_pending = true;
         }
         match rd {
@@ -427,17 +433,25 @@ impl<'a> RdWalk<'a> {
         obj.border = border;
     }
 
-    /// `0x0100` — the current object's font color. First run wins: a multi-run text object keeps the
-    /// color of its first run.
+    /// `0x0100` — a run's font color. `0x0100` streams once per run, ahead of that run's `0x08`
+    /// (which is why, unlike [`Self::apply_font`], the run it belongs to is already the last one
+    /// pushed). Every run's own color is kept on the run; the first run's is *also* promoted to the
+    /// object's own color, the SDK-reported value for a multi-run text object.
     fn apply_font_color(&mut self, node: &RecordNode) {
-        if self.color_set {
-            return;
-        }
         let row = self.row(&ft::FONT_COLOR, node);
         let color = colorref_or_white(row.u("color"));
-        if let Some(fc) = self.object().and_then(font_color_mut) {
-            fc.color = color;
-            self.color_set = true;
+        if let Some(run) = self
+            .text()
+            .and_then(|t| t.paragraphs.last_mut())
+            .and_then(|p| p.runs.last_mut())
+        {
+            run.color = Some(color);
+        }
+        if !self.color_set {
+            if let Some(fc) = self.object().and_then(font_color_mut) {
+                fc.color = color;
+                self.color_set = true;
+            }
         }
     }
 
@@ -463,12 +477,27 @@ impl<'a> RdWalk<'a> {
         }
     }
 
-    /// `0x0101` — the current object's font conditional-format formulas.
+    /// `0x0101` — a run's font conditional-format formulas, immediately ahead of that run's
+    /// `0x0100` (see [`Self::apply_font_color`]). Every run keeps its own conditions — a later run's
+    /// condition must stay scoped to that run, not leak onto the whole object (e.g. an
+    /// accent-bar-plus-label text object where only the label run carries a conditional color) — and
+    /// the first run's are *also* promoted to the object's own, the same policy as
+    /// [`Self::apply_font_color`].
     fn apply_font_conditions(&mut self, node: &RecordNode) {
         let row = self.row(&ft::FONT_CONDITION_FORMAT, node);
         let resolved = resolve_conditions(&condition_slots(&row), &self.conditions);
-        if let Some(fc) = self.object().and_then(font_color_mut) {
-            fc.condition_formulas.extend(resolved);
+        if let Some(run) = self
+            .text()
+            .and_then(|t| t.paragraphs.last_mut())
+            .and_then(|p| p.runs.last_mut())
+        {
+            run.condition_formulas.extend(resolved.clone());
+        }
+        if !self.font_conditions_set {
+            if let Some(fc) = self.object().and_then(font_color_mut) {
+                fc.condition_formulas.extend(resolved);
+                self.font_conditions_set = true;
+            }
         }
     }
 
@@ -487,10 +516,12 @@ impl<'a> RdWalk<'a> {
         };
         let ff = f.format.get_or_insert_with(Default::default);
         apply_field_format_child(
+            node,
             child,
             self.logical,
             ff,
             &mut self.numeric_currency_slot_pending,
+            &self.conditions,
         );
     }
 
@@ -568,6 +599,8 @@ impl<'a> RdWalk<'a> {
                     text: rendered,
                     field_ref: Some(raw.clone()),
                     font: None,
+                    color: None,
+                    condition_formulas: Vec::new(),
                     // The record stores a spacing of its own, in the slot a literal run stores one;
                     // the model does not carry it yet.
                     character_spacing: Twips(0),
@@ -590,6 +623,8 @@ impl<'a> RdWalk<'a> {
                     text: text.clone(),
                     field_ref: None,
                     font: None,
+                    color: None,
+                    condition_formulas: Vec::new(),
                     character_spacing,
                 },
             );

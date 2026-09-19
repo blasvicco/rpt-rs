@@ -17,8 +17,14 @@
 //! Charts (the `chart` module) and cross-tabs (`crosstab`) render as native draw-ops (bars / a pivot grid)
 //! computed from the dataset (the series/pivot builders live in `aggregate`). Subreports render
 //! recursively: a subreport object lays out its nested [`Report`] (sharing this formatter's text
-//! stack) and its draw-ops are translated into the object's box. Summary resolution is best-effort;
-//! a cross-tab supports a single row × column axis pair; and only page-1, unlinked subreports render.
+//! stack) and its draw-ops are translated into the object's box, with the enclosing row's
+//! [`SubreportLink`](rpt_model::SubreportLink)s bound into its parameters/filters (a link's
+//! `main_report_field` may itself be a main-report formula, resolved against the current row) — see
+//! `Formatter::subreport_link_bindings`. Summary resolution is best-effort; a cross-tab supports a
+//! single row × column axis pair; and a **fixed-position** subreport (page header/footer, a
+//! multi-column band — anything that does not grow the enclosing band to fit) takes only its first
+//! formatted page. An inline subreport in a normal flowing band has no such limit: it grows the band
+//! and every one of its pages becomes a forced parent page break.
 //!
 //! The formatter is split across a few modules over a shared `Formatter` state holder:
 //! `paginate` owns the page-break cursor and band walk, `place` emits each object's draw-ops,
@@ -124,6 +130,20 @@ pub(crate) struct LayoutLine {
     /// scalar. It decided this line's wrap point and is carried onto the emitted run so the backend
     /// draws at the same width it was measured at.
     pub(crate) character_spacing: Twips,
+    /// This line's own per-run breakdown, when its paragraph mixes runs with different resolved
+    /// fonts/colors and fit unwrapped on one line (e.g. an accent-bar glyph in one font/color
+    /// followed by a differently-styled label — a common Crystal idiom). Painted instead of
+    /// `text`/`font`/(the object's) color when present. `None` for the overwhelming common case of a
+    /// uniformly-styled line, which paints exactly as before.
+    pub(crate) spans: Option<Vec<RunSpan>>,
+}
+
+/// One differently-styled piece of a [`LayoutLine`] — see its `spans` field.
+pub(crate) struct RunSpan {
+    pub(crate) text: String,
+    pub(crate) font: FontSpec,
+    pub(crate) color: Color,
+    pub(crate) character_spacing: Twips,
 }
 
 /// One child page of a formatted subreport: its box-local draw-ops (the subreport's printable
@@ -192,6 +212,8 @@ pub fn layout_with(
         text_layout,
         None,
         Locale::default(),
+        None,
+        None,
     )
 }
 
@@ -199,6 +221,12 @@ pub fn layout_with(
 /// it (a live datasource) instead of only their saved data. `None` keeps the offline behaviour
 /// (subreports render from saved data). The provider lets the native render CLI feed each subreport
 /// scope's live rows without `rpt-layout` depending on any DB crate.
+///
+/// `section_visibility` is an optional caller override forcing named sections visible/hidden ahead
+/// of their own suppress flag/formula — see [`Formatter::section_visibility`]. `object_visibility` is
+/// the same shape for individual objects — see [`Formatter::object_visibility`]. `None` applies no
+/// override.
+#[allow(clippy::too_many_arguments)]
 pub fn layout_scoped(
     report: &Report,
     dataset: &Dataset,
@@ -206,6 +234,8 @@ pub fn layout_scoped(
     text_layout: Box<dyn TextLayout>,
     scope_data: Option<&dyn ScopeData>,
     locale: Locale,
+    section_visibility: Option<&BTreeMap<String, bool>>,
+    object_visibility: Option<&BTreeMap<String, bool>>,
 ) -> PagedDocument {
     // The report-lifetime store for Global/Shared variables — one instance for the whole print pass
     // so running totals / WhilePrintingRecords counters accumulate across records.
@@ -225,6 +255,8 @@ pub fn layout_scoped(
         &scheduled,
         scope_data,
         locale,
+        section_visibility,
+        object_visibility,
     )
     .run()
     .0
@@ -468,6 +500,21 @@ pub(crate) struct Formatter<'a> {
     /// Open "Underlay Following Sections" spans on the current page: the bottom each underlaid
     /// section reached, and the companion band that ends it. Cleared at every page top.
     underlay_spans: Vec<paginate::UnderlaySpan>,
+    /// Caller-supplied per-section visibility override, keyed by [`Section::name`]: `true` forces
+    /// a section visible, `false` forces it hidden, ahead of its own static `suppress` flag or
+    /// `Section_Visibility` formula (see [`Self::section_suppressed`]). `None` = no override,
+    /// today's existing precedence. Copied as-is into every nested subreport [`Formatter`]
+    /// (`place::format_subreport`) — section names are not namespaced against subreports, so an
+    /// override applies wherever that name occurs in the report tree.
+    section_visibility: Option<&'a BTreeMap<String, bool>>,
+    /// Caller-supplied per-object visibility override, keyed by [`rpt_model::ReportObject::name`] —
+    /// same shape and precedence as [`Self::section_visibility`], but for individual objects (see
+    /// [`Self::object_suppressed`]). Reaches an object even inside a `Suppress` + "Underlay Following
+    /// Sections" section that still paints as a background layer despite being suppressed — the one
+    /// case `section_visibility` cannot silence a single unwanted object without disabling the
+    /// underlay for everything else sharing it. Copied as-is into every nested subreport [`Formatter`]
+    /// (`place::format_subreport`), same as `section_visibility`.
+    object_visibility: Option<&'a BTreeMap<String, bool>>,
 }
 
 /// A placed text run whose value depends on the final page count (`TotalPageCount` / `PageNofM`),
@@ -537,6 +584,8 @@ impl<'a> Formatter<'a> {
         scheduled: &'a ScheduledValues,
         scope_data: Option<&'a dyn ScopeData>,
         locale: Locale,
+        section_visibility: Option<&'a BTreeMap<String, bool>>,
+        object_visibility: Option<&'a BTreeMap<String, bool>>,
     ) -> Formatter<'a> {
         let po = &report.print_options;
         let m = &po.margins;
@@ -614,6 +663,8 @@ impl<'a> Formatter<'a> {
             records_on_page: 0,
             groups_on_page: vec![0; group_levels],
             underlay_spans: Vec::new(),
+            section_visibility,
+            object_visibility,
         }
     }
 
@@ -744,6 +795,7 @@ impl<'a> Formatter<'a> {
             page_number: self.page_number,
             total_pages: self.pages.len() as i64 + 1,
             record_number: self.record_number,
+            total_records: self.dataset.row_count as i64,
         }
     }
 
@@ -918,6 +970,32 @@ pub(crate) fn translate_op(op: &DrawOp, dx: i32, dy: i32, id_offset: u32) -> Dra
         }
     }
     moved
+}
+
+/// Narrow a filled/stroked shape (`Rect`/`Ellipse`) so it never paints past `right` (page-space twips),
+/// leaving every other op kind untouched. Called after [`translate_op`], so `op` is already in page
+/// space and `right` compares directly against its bounds.
+///
+/// A subreport's own internal page width is unrelated to the placeholder box it gets merged into — a
+/// row-shading or section-background fill authored at the subreport's own width bleeds past a narrower
+/// placeholder and silently paints over whatever sits to the box's right on the host page (this is how
+/// a tax-detail table's alternating-row background once overpainted an adjacent totals box's text: the
+/// text itself placed correctly, but a wider fill drawn afterward covered it). Text/line/image ops are
+/// left alone: they were never observed to cause this failure mode, and narrowing a `TextRun`'s bounds
+/// after it was already wrapped to that width would misreport its metrics without actually clipping the
+/// glyphs.
+pub(crate) fn clip_shape_to_right_edge(op: DrawOp, right: i32) -> DrawOp {
+    match op {
+        DrawOp::Rect(mut r) if r.bounds.left.0 + r.bounds.width.0 > right => {
+            r.bounds.width = Twips((right - r.bounds.left.0).max(0));
+            DrawOp::Rect(r)
+        }
+        DrawOp::Ellipse(mut e) if e.bounds.left.0 + e.bounds.width.0 > right => {
+            e.bounds.width = Twips((right - e.bounds.left.0).max(0));
+            DrawOp::Ellipse(e)
+        }
+        other => other,
+    }
 }
 
 pub(crate) fn font_of(f: &Font) -> FontSpec {

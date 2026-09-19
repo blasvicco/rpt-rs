@@ -261,6 +261,8 @@ fn numeric_node(name: &str, nf: &NumericFieldFormat) -> Option<Node> {
         decimal_symbol,
         thousand_symbol,
         currency_symbol_text,
+        // Conditional-format formulas are not part of the KDL export surface.
+        condition_formulas: _,
     } = nf;
     Some(
         Node::new(name)

@@ -1,5 +1,6 @@
 //! Per-object/area/section attribute and format record decoders.
 
+use super::conditions::{condition_slots, resolve_conditions};
 use crate::build_model::record_values::colorref;
 use crate::build_model::row_of;
 use crate::codec::RecordNode;
@@ -9,6 +10,7 @@ use crate::model::{
     Alignment, Font, FontColor, Hyperlink, HyperlinkType, LineStyle, ReportObject, ReportObjectKind,
 };
 use crate::records::rtype::*;
+use std::collections::BTreeMap;
 
 /// One member of the field-format family: a typed wrapper record, the one value record its type
 /// names, and the field table that value record is read through.
@@ -177,6 +179,9 @@ pub(crate) fn decode_numeric_format(row: &Row) -> crate::model::NumericFieldForm
         decimal_symbol: row.text("decimal_symbol").to_owned(),
         thousand_symbol: row.text("thousand_symbol").to_owned(),
         currency_symbol_text: row.text("currency_symbol").to_owned(),
+        // Filled by the caller from the wrapper record's formula slots — this record has no
+        // condition data of its own.
+        condition_formulas: Vec::new(),
     }
 }
 
@@ -323,11 +328,19 @@ pub(crate) fn decode_boolean_format(row: &Row) -> crate::model::BooleanFieldForm
 /// per field — the currency-format slot first, then the number-format slot — and
 /// `currency_slot_pending` is what tells the two apart; the number slot is the reported value for a
 /// non-currency field, so it also overwrites the first.
+///
+/// `wrapper` is the parent record (the `NUMERIC_FIELD_FORMAT` case reads its own row through
+/// [`ft::NUMERIC_FIELD_FORMAT_WRAPPER`] for the conditional-format formula slots that sit alongside
+/// its `0x00f8` value child — e.g. a `Currency_Symbol` formula that computes the symbol from the
+/// document's own currency at print time, the mechanism SAP B1 templates use to vary a field's
+/// separators/symbol per print run rather than baking one in statically).
 pub(super) fn apply_field_format_child(
+    wrapper: &RecordNode,
     child: &RecordNode,
     logical: &[u8],
     ff: &mut crate::model::FieldFormat,
     currency_slot_pending: &mut bool,
+    conditions: &BTreeMap<usize, (String, String)>,
 ) {
     let Some(table) = field_format_table(child.rtype) else {
         return;
@@ -336,7 +349,9 @@ pub(super) fn apply_field_format_child(
     match child.rtype {
         COMMON_FIELD_FORMAT => ff.common = decode_common_format(&row),
         NUMERIC_FIELD_FORMAT => {
-            let nf = decode_numeric_format(&row);
+            let mut nf = decode_numeric_format(&row);
+            let wrapper_row = row_of(wrapper, logical, &ft::NUMERIC_FIELD_FORMAT_WRAPPER);
+            nf.condition_formulas = resolve_conditions(&condition_slots(&wrapper_row), conditions);
             if *currency_slot_pending {
                 ff.currency_numeric = nf.clone();
                 *currency_slot_pending = false;

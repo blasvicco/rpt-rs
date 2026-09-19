@@ -1389,6 +1389,13 @@
                           "runs": [
                             {
                               "character_spacing": 0,
+                              "color": {
+                                "a": 255,
+                                "b": 165,
+                                "g": 121,
+                                "r": 90
+                              },
+                              "condition_formulas": [],
                               "field_ref": null,
                               "font": {
                                 "bold": false,
@@ -1404,6 +1411,13 @@
                             },
                             {
                               "character_spacing": 0,
+                              "color": {
+                                "a": 255,
+                                "b": 165,
+                                "g": 121,
+                                "r": 90
+                              },
+                              "condition_formulas": [],
                               "field_ref": "Print Date",
                               "font": {
                                 "bold": false,
@@ -1419,6 +1433,13 @@
                             },
                             {
                               "character_spacing": 0,
+                              "color": {
+                                "a": 255,
+                                "b": 165,
+                                "g": 121,
+                                "r": 90
+                              },
+                              "condition_formulas": [],
                               "field_ref": null,
                               "font": {
                                 "bold": false,
@@ -1434,6 +1455,13 @@
                             },
                             {
                               "character_spacing": 0,
+                              "color": {
+                                "a": 255,
+                                "b": 165,
+                                "g": 121,
+                                "r": 90
+                              },
+                              "condition_formulas": [],
                               "field_ref": "Modification Date",
                               "font": {
                                 "bold": false,
@@ -12517,6 +12545,13 @@
                                 "runs": [
                                   {
                                     "character_spacing": 0,
+                                    "color": {
+                                      "a": 255,
+                                      "b": 128,
+                                      "g": 0,
+                                      "r": 0
+                                    },
+                                    "condition_formulas": [],
                                     "field_ref": null,
                                     "font": {
                                       "bold": true,
@@ -12643,6 +12678,13 @@
                                 "runs": [
                                   {
                                     "character_spacing": 0,
+                                    "color": {
+                                      "a": 255,
+                                      "b": 165,
+                                      "g": 121,
+                                      "r": 90
+                                    },
+                                    "condition_formulas": [],
                                     "field_ref": null,
                                     "font": {
                                       "bold": true,
@@ -13185,6 +13227,13 @@
                                 "runs": [
                                   {
                                     "character_spacing": 0,
+                                    "color": {
+                                      "a": 255,
+                                      "b": 165,
+                                      "g": 121,
+                                      "r": 90
+                                    },
+                                    "condition_formulas": [],
                                     "field_ref": null,
                                     "font": {
                                       "bold": false,
@@ -13200,6 +13249,13 @@
                                   },
                                   {
                                     "character_spacing": 0,
+                                    "color": {
+                                      "a": 255,
+                                      "b": 165,
+                                      "g": 121,
+                                      "r": 90
+                                    },
+                                    "condition_formulas": [],
                                     "field_ref": "Print Date",
                                     "font": {
                                       "bold": false,
@@ -13215,6 +13271,13 @@
                                   },
                                   {
                                     "character_spacing": 0,
+                                    "color": {
+                                      "a": 255,
+                                      "b": 165,
+                                      "g": 121,
+                                      "r": 90
+                                    },
+                                    "condition_formulas": [],
                                     "field_ref": null,
                                     "font": {
                                       "bold": false,
@@ -13230,6 +13293,13 @@
                                   },
                                   {
                                     "character_spacing": 0,
+                                    "color": {
+                                      "a": 255,
+                                      "b": 165,
+                                      "g": 121,
+                                      "r": 90
+                                    },
+                                    "condition_formulas": [],
                                     "field_ref": "Modification Date",
                                     "font": {
                                       "bold": false,

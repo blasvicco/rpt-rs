@@ -303,6 +303,12 @@ pub struct NumericFieldFormat {
     pub thousand_symbol: String,
     /// SDK `CurrencySymbol` — the currency symbol string (e.g. `"kr "`); empty when there is none.
     pub currency_symbol_text: String,
+    /// Per-property conditional-format formulas attached to this numeric/currency slot (e.g. a
+    /// `Currency_Symbol` formula that computes the symbol from a document's own currency at print
+    /// time, overriding [`Self::currency_symbol_text`]). Stored under the same reserved names as
+    /// other conditional formats (see `is_modeled_condition` in `rpt-reader`); resolving them into
+    /// the effective format is the render consumer's concern.
+    pub condition_formulas: Vec<(String, String)>,
 }
 
 impl Default for NumericFieldFormat {
@@ -325,6 +331,7 @@ impl Default for NumericFieldFormat {
             decimal_symbol: String::new(),
             thousand_symbol: String::new(),
             currency_symbol_text: String::new(),
+            condition_formulas: Vec::new(),
         }
     }
 }

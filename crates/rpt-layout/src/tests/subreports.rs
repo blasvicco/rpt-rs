@@ -710,3 +710,248 @@ fn subreport_link_resolves_main_report_formula_field() {
          formula (21 * 2 = 42), got {texts:?}"
     );
 }
+
+#[test]
+fn subreport_shape_wider_than_its_box_does_not_bleed_past_it() {
+    // A subreport's own internal page width is unrelated to the placeholder box it gets merged into.
+    // A row-shading/background box authored at the subreport's own width must not paint past a
+    // narrower placeholder box and onto whatever sits to its right on the host page — regression test
+    // for a bug where a tax-detail table's alternating-row background did exactly that, overpainting an
+    // adjacent totals box's "Total IVA" text (the text placed correctly; a wider fill drawn afterward
+    // covered it).
+    use rpt_model::{BoxShape, Subreport, SubreportObject};
+
+    // Nested subreport: a background box far wider (5000) than the box it will be placed into.
+    let mut boxo = ReportObject::default();
+    boxo.name = "Zebra".into();
+    boxo.bounds = Rect {
+        left: Twips(0),
+        top: Twips(0),
+        width: Twips(5000),
+        height: Twips(200),
+    };
+    boxo.kind = ReportObjectKind::Box(BoxShape::default());
+    boxo.border.background_color = Some(Color {
+        a: 255,
+        r: 0xf2,
+        g: 0xf5,
+        b: 0xf8,
+    });
+
+    let mut nested = Report::default();
+    nested.report_definition.areas = vec![area(
+        AreaSectionKind::ReportHeader,
+        vec![section(AreaSectionKind::ReportHeader, "SubRH", 200, vec![boxo])],
+    )];
+
+    // Main report: the placeholder box is only 2000 wide, starting at left=1000 — narrower than the
+    // subreport's own 5000-wide background box.
+    let mut sub_obj = ReportObject::default();
+    sub_obj.name = "SubObj".into();
+    sub_obj.bounds = Rect {
+        left: Twips(1000),
+        top: Twips(500),
+        width: Twips(2000),
+        height: Twips(200),
+    };
+    let mut so = SubreportObject::default();
+    so.subreport_name = "Sub".into();
+    sub_obj.kind = ReportObjectKind::Subreport(so);
+
+    let mut main = Report::default();
+    main.report_definition.areas = vec![area(
+        AreaSectionKind::ReportHeader,
+        vec![section(
+            AreaSectionKind::ReportHeader,
+            "MainRH",
+            3000,
+            vec![sub_obj],
+        )],
+    )];
+    let mut sr = Subreport::default();
+    sr.name = "Sub".into();
+    sr.report = Box::new(nested);
+    main.subreports = vec![sr];
+
+    let empty = SavedData::default();
+    let ds = build_dataset(&SavedDataSource::new(&empty), &main.data_definition);
+    let formulas = rpt_data::compile_formulas(&main.data_definition);
+    let doc = layout(&main, &ds, &formulas);
+
+    let rect = doc
+        .pages
+        .iter()
+        .flat_map(|p| &p.ops)
+        .find_map(|op| match op {
+            DrawOp::Rect(r) if r.fill.is_some() => Some(r.clone()),
+            _ => None,
+        })
+        .expect("the background box renders");
+
+    // The box's left edge still lands where the placeholder box puts it (left 1000), but its width
+    // must be capped at the placeholder's own width (2000) rather than the subreport's authored width
+    // (5000) — so the fill never reaches past x=3000, regardless of how wide it was drawn internally.
+    assert_eq!(rect.bounds.left.0, 1000, "unclipped left edge");
+    assert_eq!(
+        rect.bounds.left.0 + rect.bounds.width.0,
+        3000,
+        "the fill must not extend past the placeholder box's right edge (1000 + 2000 = 3000), \
+         got right edge {}",
+        rect.bounds.left.0 + rect.bounds.width.0
+    );
+}
+
+/// A caller-supplied `section_visibility` override forces a statically-suppressed (`Suppress`,
+/// no formula) Report Header section to render — absolute precedence over the section's own
+/// suppress flag, at the main-report level.
+#[test]
+fn section_visibility_override_forces_a_suppressed_section_visible() {
+    use crate::{layout_scoped, ApproxLayout, Locale};
+    use std::collections::BTreeMap;
+
+    let mut hidden = section(
+        AreaSectionKind::ReportHeader,
+        "Hidden",
+        240,
+        vec![text_object("Lbl", "SHOULD_SHOW", 0)],
+    );
+    hidden.format.base.suppress = true;
+
+    let mut report = Report::default();
+    report.report_definition.areas = vec![area(AreaSectionKind::ReportHeader, vec![hidden])];
+
+    let empty = SavedData::default();
+    let ds = build_dataset(&SavedDataSource::new(&empty), &report.data_definition);
+    let formulas = rpt_data::compile_formulas(&report.data_definition);
+
+    let has_label = |doc: &rpt_pages::PagedDocument| {
+        doc.pages
+            .iter()
+            .flat_map(|p| &p.ops)
+            .any(|op| matches!(op, DrawOp::Text(t) if t.text == "SHOULD_SHOW"))
+    };
+
+    let without_override = layout_scoped(
+        &report,
+        &ds,
+        &formulas,
+        Box::new(ApproxLayout),
+        None,
+        Locale::default(),
+        None,
+        None,
+    );
+    assert!(
+        !has_label(&without_override),
+        "sanity check: the section is suppressed absent any override"
+    );
+
+    let overrides = BTreeMap::from([("Hidden".to_string(), true)]);
+    let with_override = layout_scoped(
+        &report,
+        &ds,
+        &formulas,
+        Box::new(ApproxLayout),
+        None,
+        Locale::default(),
+        Some(&overrides),
+        None,
+    );
+    assert!(
+        has_label(&with_override),
+        "a `true` override for a suppressed section's name must force it to render"
+    );
+}
+
+/// A caller-supplied `section_visibility` override forces a normally-visible section hidden —
+/// and, critically, reaches a section that only exists inside a linked subreport's own nested
+/// [`crate::Formatter`] (the recursive construction in `place::format_subreport`), not just the
+/// main report's top-level one.
+#[test]
+fn section_visibility_override_reaches_a_visible_subreport_section() {
+    use crate::{layout_scoped, ApproxLayout, Locale};
+    use rpt_model::{Subreport, SubreportObject};
+    use std::collections::BTreeMap;
+
+    // Nested subreport: an ordinary, non-suppressed report-header section.
+    let mut nested = Report::default();
+    nested.report_definition.areas = vec![area(
+        AreaSectionKind::ReportHeader,
+        vec![section(
+            AreaSectionKind::ReportHeader,
+            "SubRH",
+            240,
+            vec![text_object("Lbl", "SHOULD_HIDE", 0)],
+        )],
+    )];
+
+    let mut sub_obj = ReportObject::default();
+    sub_obj.name = "SubObj".into();
+    sub_obj.bounds = Rect {
+        left: Twips(0),
+        top: Twips(0),
+        width: Twips(3000),
+        height: Twips(240),
+    };
+    let mut so = SubreportObject::default();
+    so.subreport_name = "Sub".into();
+    sub_obj.kind = ReportObjectKind::Subreport(so);
+
+    let mut main = Report::default();
+    main.report_definition.areas = vec![area(
+        AreaSectionKind::ReportHeader,
+        vec![section(
+            AreaSectionKind::ReportHeader,
+            "MainRH",
+            3000,
+            vec![sub_obj],
+        )],
+    )];
+    let mut sr = Subreport::default();
+    sr.name = "Sub".into();
+    sr.report = Box::new(nested);
+    main.subreports = vec![sr];
+
+    let empty = SavedData::default();
+    let ds = build_dataset(&SavedDataSource::new(&empty), &main.data_definition);
+    let formulas = rpt_data::compile_formulas(&main.data_definition);
+
+    let has_label = |doc: &rpt_pages::PagedDocument| {
+        doc.pages
+            .iter()
+            .flat_map(|p| &p.ops)
+            .any(|op| matches!(op, DrawOp::Text(t) if t.text == "SHOULD_HIDE"))
+    };
+
+    let without_override = layout_scoped(
+        &main,
+        &ds,
+        &formulas,
+        Box::new(ApproxLayout),
+        None,
+        Locale::default(),
+        None,
+        None,
+    );
+    assert!(
+        has_label(&without_override),
+        "sanity check: the subreport section renders absent any override"
+    );
+
+    let overrides = BTreeMap::from([("SubRH".to_string(), false)]);
+    let with_override = layout_scoped(
+        &main,
+        &ds,
+        &formulas,
+        Box::new(ApproxLayout),
+        None,
+        Locale::default(),
+        Some(&overrides),
+        None,
+    );
+    assert!(
+        !has_label(&with_override),
+        "a `false` override must reach a section nested inside a linked subreport's own \
+         Formatter, not just the main report's top-level one"
+    );
+}

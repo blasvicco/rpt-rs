@@ -130,11 +130,21 @@ fn flatten_group_rows(g: &GroupInstance, out: &mut Vec<Row>) {
 }
 
 /// Compare two decorated sort keys lexicographically, each field honoring its own direction. Returns
-/// `Equal` only when every field ties, leaving the stable sort to preserve read order.
+/// `Equal` only when every field ties (or is `NoSortOrder`), leaving the stable sort to preserve
+/// read order.
+///
+/// `NoSortOrder` ("Original Order" in the designer — e.g. a group-break field the report groups by
+/// but does not want re-sorted, such as a comment line's blank item code sitting among priced
+/// items' real ones) contributes no ordering signal at all: it must compare `Equal` and fall
+/// through to the next field, not actively compare the values as `AscendingOrder` would. Matching
+/// it into a wildcard arm that still calls `compare_values` — the same bug `NoSortOrder` has in
+/// group-instance ordering (`pipeline::group::build_groups`) — reorders rows whose only stated sort
+/// field is unsorted.
 pub(super) fn compare_sort_keys(a: &[Value], b: &[Value], dirs: &[SortDirection]) -> Ordering {
     for ((av, bv), dir) in a.iter().zip(b).zip(dirs) {
         let ord = match dir {
             SortDirection::DescendingOrder => compare_values(av, bv).reverse(),
+            SortDirection::NoSortOrder => Ordering::Equal,
             _ => compare_values(av, bv),
         };
         if ord != Ordering::Equal {

@@ -6,8 +6,8 @@
 
 use crate::resolve::cond;
 use crate::{
-    browser_renderable, emf, push_diag, translate_op, EmptyRows, Formatter, SubreportChunk,
-    SubreportRender, TextPlan,
+    browser_renderable, clip_shape_to_right_edge, emf, push_diag, translate_op, EmptyRows,
+    Formatter, SubreportChunk, SubreportRender, TextPlan,
 };
 use rpt_data::{
     compile_formulas, compile_formulas_at, normalize_param_name, DataContext, FieldFilter,
@@ -23,7 +23,7 @@ use rpt_model::{
 };
 use rpt_pages::{
     Diagnostic, DiagnosticKind, DrawOp, ImageFit, ImageOp, LineOp, LineStyle, ObjectKind,
-    ObjectRef, RectOp, Stroke, TextRun,
+    ObjectRef, RectOp, Stroke, TextAlign, TextRun,
 };
 
 /// The engine's default thin rule width (a hairline, ~0.7px at 96dpi) — used for object borders,
@@ -210,11 +210,10 @@ impl Formatter<'_> {
     ) {
         // A conditional visibility formula, when present, overrides the static suppress flag. It is
         // stored under its reserved Crystal name (`Object_Visibility`), evaluated per row: a `True`
-        // result hides the object (drives the zebra row shading and per-row flags).
-        let suppressed =
-            crate::resolve::cond_bool(&obj.format.condition_formulas, cond::OBJECT_VISIBILITY, ctx)
-                .unwrap_or(obj.format.suppress.value);
-        if suppressed {
+        // result hides the object (drives the zebra row shading and per-row flags). A caller-supplied
+        // `object_visibility` override takes absolute precedence over both — see
+        // `paginate::Formatter::object_suppressed`.
+        if self.object_suppressed(obj, ctx) {
             return;
         }
         // One instance id per placed object: its text runs and its border/fill box share it, so a
@@ -320,6 +319,55 @@ impl Formatter<'_> {
                     y += line.line_height.0;
                     lr
                 };
+                if let Some(spans) = &line.spans {
+                    // A multi-run line (e.g. an accent-bar glyph followed by a differently-colored
+                    // label) paints each run in its own resolved font/color, positioned by
+                    // cumulative advance so the runs sit adjacent rather than each independently
+                    // aligning within the full line box (which would overlap them). The group's
+                    // start x honors the line's overall alignment against their combined width;
+                    // each run within it is then emitted left-aligned from its own bounds.
+                    let widths: Vec<i32> = spans
+                        .iter()
+                        .map(|s| {
+                            crate::text::spaced_width_twips(
+                                self.text_layout,
+                                &s.text,
+                                &s.font,
+                                s.character_spacing,
+                            ) as i32
+                        })
+                        .collect();
+                    let total_w: i32 = widths.iter().sum();
+                    let start_x = match line.align {
+                        TextAlign::Right => line_rect.left.0 + line_rect.width.0 - total_w,
+                        TextAlign::Center => line_rect.left.0 + (line_rect.width.0 - total_w) / 2,
+                        TextAlign::Left | TextAlign::Justified => line_rect.left.0,
+                    };
+                    let mut x = start_x;
+                    emitted = 0;
+                    for (span, w) in spans.iter().zip(&widths) {
+                        let mut span_rect = line_rect;
+                        span_rect.left = Twips(x);
+                        span_rect.width = Twips(*w);
+                        emitted += self.push_op(DrawOp::Text(TextRun {
+                            bounds: span_rect,
+                            text: span.text.clone(),
+                            font: span.font.clone(),
+                            color: span.color,
+                            align: TextAlign::Left,
+                            rotation,
+                            metrics: Some(rpt_pages::TextMetrics {
+                                advance: Twips(*w),
+                                ascent: line.ascent,
+                                line_height: line.line_height,
+                            }),
+                            character_spacing: span.character_spacing,
+                            source: at.src(obj, plan.kind),
+                        }));
+                        x += *w;
+                    }
+                    continue;
+                }
                 // The reported advance is the one the wrap was decided on: natural advances plus the
                 // paragraph's character spacing.
                 let advance = Twips(crate::text::spaced_width_twips(
@@ -651,13 +699,7 @@ impl Formatter<'_> {
                 if sr.on_demand {
                     return None;
                 }
-                let suppressed = crate::resolve::cond_bool(
-                    &obj.format.condition_formulas,
-                    cond::OBJECT_VISIBILITY,
-                    ctx,
-                )
-                .unwrap_or(obj.format.suppress.value);
-                if suppressed {
+                if self.object_suppressed(obj, ctx) {
                     return None;
                 }
                 self.format_subreport(sr, obj.bounds.height.0, true)
@@ -729,9 +771,12 @@ impl Formatter<'_> {
     /// Place a subreport's box-local ops (printable top-left at `0,0`) into its box at `rect`: shift
     /// each by the box top-left and lift its 0-based instance ids into the parent's id space so they
     /// don't collide. `clip_below`, when set, drops ops whose top lies at/below that box-local height
-    /// (the fallback clipped path); `None` emits every op (the grown, cached path).
+    /// (the fallback clipped path); `None` emits every op (the grown, cached path). Every shape op is
+    /// also narrowed to `rect`'s right edge (see [`clip_shape_to_right_edge`]) regardless of path: the
+    /// subreport's own content can be wider than this box, and nothing here bounds it vertically-only.
     fn place_subreport_ops(&mut self, chunk: &SubreportChunk, rect: Rect, clip_below: Option<i32>) {
         let (dx, dy) = (rect.left.0, rect.top.0);
+        let box_right = rect.left.0 + rect.width.0;
         let id_offset = self.next_instance_id;
         let placement = self.take_subreport_placement();
         let mut max_instance: Option<u32> = None;
@@ -741,7 +786,7 @@ impl Formatter<'_> {
                     continue;
                 }
             }
-            let moved = translate_op(op, dx, dy, id_offset);
+            let moved = clip_shape_to_right_edge(translate_op(op, dx, dy, id_offset), box_right);
             if let Some(inst) = moved.source().and_then(|s| s.instance) {
                 max_instance = Some(max_instance.map_or(inst, |m| m.max(inst)));
             }
@@ -791,8 +836,11 @@ impl Formatter<'_> {
     /// forced page break (a child page boundary); within a chunk, filling the body soft-breaks to the
     /// next page. `rect` is the subreport box on the current page (its top the first slice's anchor).
     /// Leaves `cursor_y` at the bottom of the last placed slice so following bands flow beneath it.
+    /// Every shape op is narrowed to `rect`'s right edge (see [`clip_shape_to_right_edge`]), same as
+    /// the atomic path in [`Self::place_subreport_ops`].
     pub(crate) fn place_subreport_flowing(&mut self, chunks: &[SubreportChunk], rect: Rect) {
         let dx = rect.left.0;
+        let box_right = rect.left.0 + rect.width.0;
         let id_offset = self.next_instance_id;
         let placement = self.take_subreport_placement();
         let mut max_instance: Option<u32> = None;
@@ -834,7 +882,7 @@ impl Formatter<'_> {
                     if top < y_lo || top >= y_break {
                         continue;
                     }
-                    let moved = translate_op(op, dx, dy, id_offset);
+                    let moved = clip_shape_to_right_edge(translate_op(op, dx, dy, id_offset), box_right);
                     if let Some(inst) = moved.source().and_then(|s| s.instance) {
                         max_instance = Some(max_instance.map_or(inst, |m| m.max(inst)));
                     }
@@ -934,6 +982,8 @@ impl Formatter<'_> {
             &sub_scheduled,
             self.scope_data,
             self.locale,
+            self.section_visibility,
+            self.object_visibility,
         );
         // A subreport's pages are its own flow chunks, not the parent's physical pages, so the
         // page-scoped currency pass must not run on them.

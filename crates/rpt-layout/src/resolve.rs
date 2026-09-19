@@ -115,6 +115,12 @@ pub struct ResolveState {
     pub page_number: i64,
     pub total_pages: i64,
     pub record_number: i64,
+    /// The total detail-record count of the current report/subreport instance's own dataset — the
+    /// print-order position `record_number` runs up to. Backs `OnFirstRecord`/`OnLastRecord`
+    /// (`record_number == 1` / `record_number == total_records`): both are absolute print-state
+    /// specials scoped to *this* Formatter's own detail-row pass, the same scope `record_number`
+    /// itself already carries (report-wide, or a subreport's own instance).
+    pub total_records: i64,
 }
 
 /// The in-scope summaries resolve a summary function inside a formula body the same way a placed
@@ -163,6 +169,11 @@ pub fn context<'a>(
         .with_special("recordnumber", Value::Number(state.record_number as f64))
         .with_special("pagenumber", Value::Number(state.page_number as f64))
         .with_special("totalpagecount", Value::Number(state.total_pages as f64))
+        .with_special("onfirstrecord", Value::Bool(state.record_number == 1))
+        .with_special(
+            "onlastrecord",
+            Value::Bool(state.total_records > 0 && state.record_number == state.total_records),
+        )
 }
 
 /// Resolve a field object to a [`Value`] in the given context, recording any runtime formula error
@@ -254,7 +265,7 @@ pub(crate) fn field_text_marked(
     }
     let value = field_value(report, obj, ctx, state, diag);
     let value_type = field_object_value_type(report, obj);
-    let spec = field_format_spec(obj.format.as_ref(), value_type, loc);
+    let spec = field_format_spec(obj.format.as_ref(), value_type, loc, ctx);
     let text = render_value(&value, &spec, loc);
     let mark = match (&value, &spec) {
         // A spec with no symbol to blank is not marked, so the pass never has to consider one.
@@ -365,6 +376,56 @@ fn substitute_runs(
     out
 }
 
+/// [`text_display`], but when the object has a decoded run tree (the [`substitute_runs`] path —
+/// which every literal-only run also goes through, not just objects with an embedded field) also
+/// returns every paragraph's runs already resolved to their display text, paired with the
+/// originating [`TextRun`] for its own font/color — computed in the very same pass that builds the
+/// flattened string, so a field run's formula evaluates exactly once. Calling [`resolve_run`] a
+/// second time to recover the same per-run breakdown would evaluate it twice, firing a
+/// `WhilePrintingRecords` formula's side effects (a shared/global variable write) twice — the same
+/// hazard [`crate::PageCountFixupKind::Embedded`] is documented to avoid.
+///
+/// Gating this on "has a field run" rather than "has a run tree at all" was tried and is wrong: a
+/// purely literal multi-run paragraph (e.g. an accent-bar glyph run followed by a differently-styled
+/// label run, neither one a field reference) has every bit as real a run tree, and painting it
+/// per-run is exactly what `paginate::Formatter::run_spans` needs it for.
+///
+/// `None` in the second element only when the object has no decoded run tree at all (falls back to
+/// brace substitution over the flattened `display` string) — that path has no per-run structure to
+/// hand back, so a caller wanting per-run painting simply does not activate it for such an object.
+pub(crate) fn text_display_and_runs<'o>(
+    report: &Report,
+    obj: &'o TextObject,
+    ctx: Option<&DataContext>,
+    state: &ResolveState,
+    loc: &Locale,
+    diag: &DiagSink,
+) -> (String, Option<Vec<Vec<(String, &'o TextRun)>>>) {
+    if obj.paragraphs.iter().all(|p| p.runs.is_empty()) {
+        return (text_display(report, obj, ctx, state, loc, diag), None);
+    }
+    let mut out = String::with_capacity(obj.display.len());
+    let mut per_para = Vec::with_capacity(obj.paragraphs.len());
+    let mut any_source = false;
+    for para in &obj.paragraphs {
+        if any_source {
+            out.push('\n');
+        }
+        let mut runs = Vec::with_capacity(para.runs.len());
+        for run in &para.runs {
+            any_source |= !run.text.is_empty();
+            let text = match &run.field_ref {
+                None => run.text.clone(),
+                Some(_) => resolve_run(&run.text, report, ctx, state, loc, diag),
+            };
+            out.push_str(&text);
+            runs.push((text, run));
+        }
+        per_para.push(runs);
+    }
+    (out, Some(per_para))
+}
+
 /// Resolve one embedded-field run to its display string from the run's placeholder text — the same
 /// surface form a placed field object stores as its `data_source`, so the three reference shapes are
 /// told apart exactly as they are there: a `GroupName (…)` prefix, a brace-wrapped
@@ -416,6 +477,24 @@ pub mod cond {
     /// engine versions. All map to the same section-background condition.
     pub const SECTION_BACK_COLORS: &[&str] =
         &["Section_Back_Color", "Background_Color", "Back_Color"];
+    /// A numeric/currency field's decimal-places count (`@N_Decimal_Places`).
+    pub const N_DECIMAL_PLACES: &str = "N_Decimal_Places";
+    /// A numeric/currency field's thousands-grouping flag (`@Use_Thousands_Separators`).
+    pub const USE_THOUSANDS_SEPARATORS: &str = "Use_Thousands_Separators";
+    /// A numeric/currency field's decimal separator string (`@Decimal_Symbol`).
+    pub const DECIMAL_SYMBOL: &str = "Decimal_Symbol";
+    /// A numeric/currency field's thousands separator string (`@Thousand_Symbol`).
+    pub const THOUSAND_SYMBOL: &str = "Thousand_Symbol";
+    /// A currency field's symbol visibility, as a stored `CurrencySymbolFormat` code
+    /// (`@Currency_Symbol_Type`).
+    pub const CURRENCY_SYMBOL_TYPE: &str = "Currency_Symbol_Type";
+    /// A currency field's symbol text (`@Currency_Symbol`) — the mechanism a report drives from the
+    /// document's own currency (e.g. SAP B1's `OINV.DocCur`) rather than a symbol baked into the
+    /// field at design time.
+    pub const CURRENCY_SYMBOL: &str = "Currency_Symbol";
+    /// A currency field's symbol placement, as a stored `CurrencyPosition` code
+    /// (`@Currency_Position_Type`).
+    pub const CURRENCY_POSITION_TYPE: &str = "Currency_Position_Type";
 }
 
 /// Evaluate the first matching color condition among several candidate reserved names (used for the
@@ -457,6 +536,36 @@ pub fn cond_bool(
         Value::Bool(b) => Some(b),
         _ => None,
     }
+}
+
+/// Evaluate a named conditional-format formula to a string (e.g. a field's `Currency_Symbol`).
+/// `None` when there is no context, no such formula, or it does not yield a [`Value::Str`].
+pub fn cond_string(
+    conditions: &[(String, String)],
+    key: &str,
+    ctx: Option<&DataContext>,
+) -> Option<String> {
+    let ctx = ctx?;
+    let body = conditions.iter().find(|(k, _)| k == key).map(|(_, b)| b)?;
+    let ast = parse_cached(body);
+    match rpt_formula::eval::eval(&ast.node, ctx).ok()? {
+        Value::Str(s) => Some(s),
+        _ => None,
+    }
+}
+
+/// Evaluate a named conditional-format formula to a number (e.g. a field's `Currency_Position_Type`,
+/// a stored `CurrencyPosition` code). `None` when there is no context, no such formula, or it does
+/// not yield a numeric value.
+pub fn cond_number(
+    conditions: &[(String, String)],
+    key: &str,
+    ctx: Option<&DataContext>,
+) -> Option<f64> {
+    let ctx = ctx?;
+    let body = conditions.iter().find(|(k, _)| k == key).map(|(_, b)| b)?;
+    let ast = parse_cached(body);
+    rpt_formula::eval::eval(&ast.node, ctx).ok()?.as_number()
 }
 
 /// Decode a Crystal COLORREF number (`r + g·256 + b·65536`) to an opaque [`Color`]; `None` for a

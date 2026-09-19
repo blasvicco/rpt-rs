@@ -469,6 +469,13 @@
                           "runs": [
                             {
                               "character_spacing": 0,
+                              "color": {
+                                "a": 255,
+                                "b": 0,
+                                "g": 0,
+                                "r": 0
+                              },
+                              "condition_formulas": [],
                               "field_ref": null,
                               "font": {
                                 "bold": true,
@@ -1856,6 +1863,13 @@
                           "runs": [
                             {
                               "character_spacing": 0,
+                              "color": {
+                                "a": 255,
+                                "b": 0,
+                                "g": 0,
+                                "r": 0
+                              },
+                              "condition_formulas": [],
                               "field_ref": null,
                               "font": {
                                 "bold": true,
@@ -2006,6 +2020,13 @@
                           "runs": [
                             {
                               "character_spacing": 0,
+                              "color": {
+                                "a": 255,
+                                "b": 0,
+                                "g": 0,
+                                "r": 0
+                              },
+                              "condition_formulas": [],
                               "field_ref": null,
                               "font": {
                                 "bold": false,
@@ -2021,6 +2042,13 @@
                             },
                             {
                               "character_spacing": 0,
+                              "color": {
+                                "a": 255,
+                                "b": 0,
+                                "g": 0,
+                                "r": 0
+                              },
+                              "condition_formulas": [],
                               "field_ref": "Print Date",
                               "font": {
                                 "bold": false,
@@ -2036,6 +2064,13 @@
                             },
                             {
                               "character_spacing": 0,
+                              "color": {
+                                "a": 255,
+                                "b": 0,
+                                "g": 0,
+                                "r": 0
+                              },
+                              "condition_formulas": [],
                               "field_ref": null,
                               "font": {
                                 "bold": false,
@@ -2051,6 +2086,13 @@
                             },
                             {
                               "character_spacing": 0,
+                              "color": {
+                                "a": 255,
+                                "b": 0,
+                                "g": 0,
+                                "r": 0
+                              },
+                              "condition_formulas": [],
                               "field_ref": "Page N of M",
                               "font": {
                                 "bold": false,

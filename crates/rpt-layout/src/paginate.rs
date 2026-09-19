@@ -5,7 +5,7 @@
 //! draw-ops are emitted by [`crate::place`]; this module owns the vertical flow and page breaks.
 
 use crate::{
-    first_row, font_of, resolve::ResolveState, Formatter, GroupScope, LayoutLine, TextPlan,
+    first_row, font_of, resolve::ResolveState, Formatter, GroupScope, LayoutLine, RunSpan, TextPlan,
 };
 use rpt_data::{DataContext, GroupInstance, Row};
 use rpt_model::{
@@ -42,6 +42,23 @@ fn wrap_first_line_indent(
         lines.extend(layout.wrap(&rest.join(" "), avail, font));
     }
     lines
+}
+
+/// Whether a `Suppress`-flagged "Underlay Following Sections" band still paints as a background,
+/// despite being suppressed. `Suppress` + `Underlay` together is the standard Crystal idiom for a
+/// page-spanning decoration (a border, a watermark stripe): the section reserves no flow space, but
+/// its content still paints beneath every following section, "Suppress" there meaning "don't push
+/// the following content down" rather than "draw nothing".
+///
+/// But the same two flags are *also* how this format's "alternate first-page design, currently
+/// unused" sections are authored — each a `NewPageAfter` section meant to occupy a page entirely by
+/// itself when active, still carrying `Underlay` from whatever state it was in before being
+/// disabled. Painting *those* despite `Suppress` is wrong: a section that ends by forcing a page
+/// break can never sensibly underlay anything (there is nothing left on the page for it to sit
+/// beneath), so `NewPageAfter` excludes it here — the two flags together (a "not going anywhere,
+/// stick around under the rest of the page" carrier) is the actual signal, not `Underlay` alone.
+fn underlay_paints_through_suppress(section: &Section) -> bool {
+    section.format.underlay_section && !section.format.base.new_page_after
 }
 
 /// A paragraph's own font: the first run that carries an explicit font override, mapped to a
@@ -132,6 +149,54 @@ impl MultiColCursor {
 }
 
 impl<'a> Formatter<'a> {
+    /// One paragraph's already-resolved runs (see [`crate::resolve::text_display_and_runs`]) as
+    /// [`RunSpan`]s, each with its own resolved font (its own override, else `base_font`) and
+    /// resolved color (its own condition, else its own literal color, else `base_color` — the same
+    /// fallback chain [`crate::resolve::cond_color`] already applies at the object level, just
+    /// scoped to the run). Takes the text already resolved rather than re-resolving it — a field
+    /// run's formula must evaluate exactly once, not once for `raw` and again here. Only called for
+    /// a paragraph that fits unwrapped on one line (see [`Self::text_plan`]): a run's text is not
+    /// itself wrapped further.
+    ///
+    /// `None` when every run resolves to the same font *and* color — the overwhelming common case
+    /// for a multi-run paragraph (e.g. a literal label followed by an embedded field, "Label: " +
+    /// "{value}", both in the object's one font/color): it paints exactly as the flattened
+    /// single-run path, unsplit, matching every reader/tagger that expects one run per line.
+    /// `Some` only for a genuine style difference (e.g. an accent-bar glyph in one font/color
+    /// followed by a differently-styled label).
+    fn run_spans(
+        &self,
+        runs: &[(String, &rpt_model::TextRun)],
+        ctx: Option<&DataContext>,
+        base_font: &FontSpec,
+        base_color: rpt_model::Color,
+    ) -> Option<Vec<RunSpan>> {
+        use crate::resolve::{cond, cond_color};
+        let spans: Vec<RunSpan> = runs
+            .iter()
+            .map(|(text, run)| {
+                let font = run
+                    .font
+                    .as_ref()
+                    .map(font_of)
+                    .unwrap_or_else(|| base_font.clone());
+                let color = cond_color(&run.condition_formulas, cond::FONT_COLOR, ctx)
+                    .or(run.color)
+                    .unwrap_or(base_color);
+                RunSpan {
+                    text: text.clone(),
+                    font,
+                    color,
+                    character_spacing: run.character_spacing,
+                }
+            })
+            .collect();
+        let uniform = spans
+            .windows(2)
+            .all(|w| w[0].font == w[1].font && w[0].color == w[1].color);
+        (!uniform).then_some(spans)
+    }
+
     /// Resolve a text/field object to its wrapped display lines (`None` for non-text objects). A
     /// **field** wraps whenever its own Word Wrap is on (`FieldFormat.string.enable_word_wrap`,
     /// independent of Can Grow — a fixed-height field still wraps within its width, just overflows
@@ -147,13 +212,16 @@ impl<'a> Formatter<'a> {
         state: &ResolveState,
         allow_grow: bool,
     ) -> Option<TextPlan> {
-        use crate::resolve::{cond, cond_color, field_text_marked, text_display};
+        use crate::resolve::{cond, cond_color, field_text_marked, text_display_and_runs};
         // Set by the `Field` arm below when the field prints one currency symbol per page; the plan
         // carries it so the emit path can record a fixup without resolving the value again.
         let mut currency = None;
         // `reading_order` (Text/FieldHeading only) sets the paragraph's base direction; `paragraphs`
         // carries per-paragraph indentation for a text object (fields/headings have none).
-        let (raw, font, color, kind, reading_order, paragraphs, field_word_wrap): (
+        // `resolved_runs` (Text only) is each paragraph's runs already resolved to display text —
+        // computed once, in the same pass that resolved `raw` (see `text_display_and_runs`), so a
+        // field run's formula is not evaluated a second time when `Self::run_spans` reads it back.
+        let (raw, font, color, kind, reading_order, paragraphs, field_word_wrap, resolved_runs): (
             _,
             _,
             _,
@@ -161,6 +229,7 @@ impl<'a> Formatter<'a> {
             _,
             Option<&[Paragraph]>,
             bool,
+            Option<Vec<Vec<(String, &rpt_model::TextRun)>>>,
         ) = match &obj.kind {
             ReportObjectKind::Field(f) => (
                 {
@@ -188,17 +257,23 @@ impl<'a> Formatter<'a> {
                 f.format
                     .as_ref()
                     .is_some_and(|fmt| fmt.string.enable_word_wrap),
+                None,
             ),
-            ReportObjectKind::Text(t) => (
-                text_display(self.report, t, ctx, state, &self.locale, &self.diagnostics),
-                font_of(&t.font_color.font),
-                cond_color(&t.font_color.condition_formulas, cond::FONT_COLOR, ctx)
-                    .unwrap_or(t.font_color.color),
-                ObjectKind::Text,
-                t.reading_order,
-                Some(&t.paragraphs),
-                false,
-            ),
+            ReportObjectKind::Text(t) => {
+                let (raw, resolved_runs) =
+                    text_display_and_runs(self.report, t, ctx, state, &self.locale, &self.diagnostics);
+                (
+                    raw,
+                    font_of(&t.font_color.font),
+                    cond_color(&t.font_color.condition_formulas, cond::FONT_COLOR, ctx)
+                        .unwrap_or(t.font_color.color),
+                    ObjectKind::Text,
+                    t.reading_order,
+                    Some(&t.paragraphs[..]),
+                    false,
+                    resolved_runs,
+                )
+            }
             // A field heading is a static column-label text object: its literal is stored (needing
             // no row), drawn with its own font/color, so it resolves like a text object.
             ReportObjectKind::FieldHeading(h) => (
@@ -210,6 +285,7 @@ impl<'a> Formatter<'a> {
                 h.reading_order,
                 None,
                 false,
+                None,
             ),
             _ => return None,
         };
@@ -301,6 +377,29 @@ impl<'a> Formatter<'a> {
                 vec![seg.to_string()]
             };
             let last_line = wrapped.len().saturating_sub(1);
+            // A paragraph that fits unwrapped on one line and mixes runs (e.g. an accent-bar glyph
+            // followed by a differently-styled label) paints as one `RunSpan` per run instead of the
+            // paragraph's single resolved font/color — see `Self::run_spans`. A wrapped paragraph
+            // (`wrapped.len() > 1`) keeps the existing single-style-per-line behavior: a run's text
+            // is not itself tracked across a wrap point.
+            let mut run_spans = if wrapped.len() == 1 {
+                resolved_runs
+                    .as_ref()
+                    .and_then(|rr| rr.get(i))
+                    .filter(|runs| runs.len() > 1)
+                    .and_then(|runs| self.run_spans(runs, ctx, &font, color))
+                    // A run's own resolved text can itself carry an embedded newline the model's
+                    // paragraph structure knows nothing about (e.g. a multi-line address field's
+                    // value) — `raw.split('\n')` then cuts `seg` narrower than the run's full text,
+                    // desyncing this paragraph's index `i` from the run breakdown's. Only trust the
+                    // spans when they still reconstruct exactly this wrapped line's text; otherwise
+                    // fall back to the flattened single-style paint below.
+                    .filter(|spans| {
+                        spans.iter().map(|s| s.text.as_str()).collect::<String>() == wrapped[0]
+                    })
+            } else {
+                None
+            };
             for (j, text) in wrapped.into_iter().enumerate() {
                 // The first wrapped line of the paragraph also carries the first-line indent.
                 let x_offset = left + if j == 0 { first } else { 0 };
@@ -321,6 +420,7 @@ impl<'a> Formatter<'a> {
                     ascent,
                     align: line_align,
                     character_spacing: spacing,
+                    spans: if j == 0 { run_spans.take() } else { None },
                 });
             }
         }
@@ -334,6 +434,7 @@ impl<'a> Formatter<'a> {
                 ascent: Twips(self.text_layout.ascent_twips(&font) as i32),
                 align,
                 character_spacing: Twips(0),
+                spans: None,
             });
         }
         Some(TextPlan {
@@ -342,6 +443,58 @@ impl<'a> Formatter<'a> {
             kind,
             currency,
         })
+    }
+
+    /// Whether `section` counts as suppressed for this emit. A caller-supplied override (keyed by
+    /// [`Section::name`] — see [`Formatter::section_visibility`]) takes absolute precedence,
+    /// checked before the conditional formula even runs; falling through to the existing
+    /// precedence otherwise: a `Section_Visibility` formula (when `ctx` is available and one is
+    /// attached) overrides the static `suppress` flag, the same as object-level
+    /// `Object_Visibility` (`place.rs::emit_object`).
+    ///
+    /// `ctx: None` skips formula consultation entirely (falls straight to the static flag) —
+    /// deliberate at call sites that never consulted `Section_Visibility` before this method
+    /// existed (`emit_report_header`, `emit_band_no_paginate`, `emit_details_multicol`,
+    /// `measure_group_height`). Only pass a real context where formula consultation was already
+    /// the existing behavior (`emit_band`); the override map works either way.
+    ///
+    /// Section names are not namespaced between the main report and its subreports, or between
+    /// sibling subreports (see [`crate::sections::SectionMap`]) — an override applies wherever
+    /// that name occurs anywhere in the report tree.
+    fn section_suppressed(&self, section: &Section, ctx: Option<&DataContext>) -> bool {
+        if let Some(&visible) = self.section_visibility.and_then(|m| m.get(&section.name)) {
+            return !visible;
+        }
+        crate::resolve::cond_bool(
+            &section.condition_formulas,
+            crate::resolve::cond::SECTION_VISIBILITY,
+            ctx,
+        )
+        .unwrap_or(section.format.base.suppress)
+    }
+
+    /// Whether `obj` counts as suppressed. A caller-supplied override (keyed by
+    /// [`rpt_model::ReportObject::name`] — see [`Formatter::object_visibility`]) takes absolute
+    /// precedence, checked before the conditional formula even runs — same shape and same
+    /// unconditional-first-check as [`Self::section_suppressed`], so it applies identically at every
+    /// call site regardless of that site's own `ctx`/formula-consultation policy. Falling through to
+    /// the existing precedence otherwise: an `Object_Visibility` formula (when `ctx` is available and
+    /// one is attached) overrides the static `suppress` flag.
+    ///
+    /// This is the one override that reaches inside a `Suppress` + "Underlay Following Sections"
+    /// section: such a section still emits its objects (see [`Self::emit_band`]'s
+    /// `underlay_paints_through_suppress`), each independently gated by this check — so forcing one
+    /// object hidden here silences it even while the rest of that section's content still underlays.
+    pub(crate) fn object_suppressed(&self, obj: &rpt_model::ReportObject, ctx: Option<&DataContext>) -> bool {
+        if let Some(&visible) = self.object_visibility.and_then(|m| m.get(&obj.name)) {
+            return !visible;
+        }
+        crate::resolve::cond_bool(
+            &obj.format.condition_formulas,
+            crate::resolve::cond::OBJECT_VISIBILITY,
+            ctx,
+        )
+        .unwrap_or(obj.format.suppress.value)
     }
 
     /// Emit one band (section) at the cursor, paginating first if it would overflow the body. The
@@ -360,21 +513,12 @@ impl<'a> Formatter<'a> {
         state: &ResolveState,
         underlay_end: Option<UnderlayEnd>,
     ) -> bool {
-        // A conditional visibility formula, when present, overrides the static suppress flag — the
-        // same precedence as object-level Object_Visibility (place.rs::emit_object): a
-        // Section_Visibility formula lets a statically-suppressed section (the common "hidden unless
-        // the formula says otherwise" authoring pattern) still print per record. Evaluated on a probe
-        // context (the incoming record) so a suppressed band forces no page break and fires no side
-        // effects.
+        // Evaluated on a probe context (the incoming record) so a suppressed band forces no page
+        // break and fires no side effects.
         let empty = Row::default();
         let probe = self.context(row.unwrap_or(&empty), state);
-        let suppressed = crate::resolve::cond_bool(
-            &section.condition_formulas,
-            crate::resolve::cond::SECTION_VISIBILITY,
-            Some(&probe),
-        )
-        .unwrap_or(section.format.base.suppress);
-        if suppressed {
+        let suppressed = self.section_suppressed(section, Some(&probe));
+        if suppressed && !underlay_paints_through_suppress(section) {
             return false;
         }
         // NewPageBefore on this band, or a deferred NewPageAfter from the previous band, starts a
@@ -452,7 +596,10 @@ impl<'a> Formatter<'a> {
         if section.format.base.reset_page_number_after {
             self.pending_page_number_reset = true;
         }
-        true
+        // A suppressed-but-underlay-carrier band reached here only to paint its underlay content
+        // (above); it produced no space-consuming, countable output, so it reports itself the same
+        // as a band that returned early — `false`.
+        !suppressed
     }
 
     /// Open an "Underlay Following Sections" span for a band just emitted at `bottom - height`.
@@ -562,13 +709,10 @@ impl<'a> Formatter<'a> {
         plans: &[Option<TextPlan>],
         ctx: Option<&DataContext>,
     ) -> bool {
-        use crate::resolve::{cond, cond_bool};
         section.objects.iter().enumerate().all(|(i, obj)| {
-            // A statically- or conditionally-suppressed object draws nothing.
-            let suppressed =
-                cond_bool(&obj.format.condition_formulas, cond::OBJECT_VISIBILITY, ctx)
-                    .unwrap_or(obj.format.suppress.value);
-            if suppressed {
+            // A statically- or conditionally-suppressed object draws nothing (a caller-supplied
+            // `object_visibility` override takes absolute precedence — see `Self::object_suppressed`).
+            if self.object_suppressed(obj, ctx) {
                 return true;
             }
             match &obj.kind {
@@ -625,13 +769,16 @@ impl<'a> Formatter<'a> {
     /// [`Self::keep_group_together`]. Sums section design heights (no can-grow growth); a nested
     /// keep-together subgroup contributes its own subtree height.
     fn measure_group_height(&self, g: &GroupInstance) -> i32 {
-        fn band_height(sections: &[&Section]) -> i32 {
+        // No record in scope for this static estimate, so `section_suppressed` falls straight to
+        // the override map, then the static flag (a `Section_Visibility` formula needs a context
+        // to evaluate and is skipped here, same as before this helper existed).
+        let band_height = |sections: &[&Section]| -> i32 {
             sections
                 .iter()
-                .filter(|s| !s.format.base.suppress)
+                .filter(|s| !self.section_suppressed(s, None))
                 .map(|s| s.height.0)
                 .sum()
-        }
+        };
         let mut height = 0;
         if let Some(hdr) = self.bands.group_headers.get(g.level) {
             height += band_height(hdr);
@@ -854,9 +1001,11 @@ impl<'a> Formatter<'a> {
             self.advance_running_totals(row, &state);
             let ctx = self.context(row, &state);
             // Resolve every detail band's plans + height once (reused for pagination and emit).
+            // No context passed here: this path was static-only before `section_suppressed`
+            // existed, and stays that way — only the override map is new.
             let banded: Vec<(&Section, Vec<Option<TextPlan>>, i32)> = bands
                 .iter()
-                .filter(|s| !s.format.base.suppress)
+                .filter(|s| !self.section_suppressed(s, None))
                 .map(|s| {
                     let (plans, h) = self.band_plans_and_height(s, Some(&ctx), &state, true);
                     (*s, plans, h)
@@ -1039,7 +1188,12 @@ impl<'a> Formatter<'a> {
         self.in_report_header = true;
         for s in rh {
             let state = self.state(None);
-            if s.format.base.suppress {
+            // No context passed here: this band was static-only before `section_suppressed`
+            // existed (no `Section_Visibility` formula consultation), and stays that way — only
+            // the override map is new. Consulting the formula here would be a real behavior
+            // change to reports that rely on the current (static) precedence, not something this
+            // override needs.
+            if self.section_suppressed(s, None) && !underlay_paints_through_suppress(s) {
                 continue;
             }
             let empty = Row::default();
@@ -1094,7 +1248,10 @@ impl<'a> Formatter<'a> {
         state: &ResolveState,
         allow_grow: bool,
     ) {
-        if section.format.base.suppress {
+        // No context passed here: a Page Header/Footer was static-only before `section_suppressed`
+        // existed (no `Section_Visibility` formula consultation), and stays that way — only the
+        // override map is new.
+        if self.section_suppressed(section, None) && !underlay_paints_through_suppress(section) {
             return;
         }
         let empty = Row::default();

@@ -190,6 +190,13 @@
                           "runs": [
                             {
                               "character_spacing": 0,
+                              "color": {
+                                "a": 255,
+                                "b": 0,
+                                "g": 0,
+                                "r": 0
+                              },
+                              "condition_formulas": [],
                               "field_ref": null,
                               "font": {
                                 "bold": false,
@@ -300,6 +307,13 @@
                           "runs": [
                             {
                               "character_spacing": 0,
+                              "color": {
+                                "a": 255,
+                                "b": 0,
+                                "g": 0,
+                                "r": 0
+                              },
+                              "condition_formulas": [],
                               "field_ref": null,
                               "font": {
                                 "bold": false,
@@ -407,6 +421,13 @@
                           "runs": [
                             {
                               "character_spacing": 0,
+                              "color": {
+                                "a": 255,
+                                "b": 0,
+                                "g": 0,
+                                "r": 0
+                              },
+                              "condition_formulas": [],
                               "field_ref": null,
                               "font": {
                                 "bold": false,
@@ -517,6 +538,13 @@
                           "runs": [
                             {
                               "character_spacing": 0,
+                              "color": {
+                                "a": 255,
+                                "b": 0,
+                                "g": 0,
+                                "r": 0
+                              },
+                              "condition_formulas": [],
                               "field_ref": null,
                               "font": {
                                 "bold": false,

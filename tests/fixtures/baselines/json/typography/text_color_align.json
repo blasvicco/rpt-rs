@@ -187,6 +187,13 @@
                           "runs": [
                             {
                               "character_spacing": 0,
+                              "color": {
+                                "a": 255,
+                                "b": 0,
+                                "g": 0,
+                                "r": 0
+                              },
+                              "condition_formulas": [],
                               "field_ref": null,
                               "font": {
                                 "bold": false,
@@ -294,6 +301,13 @@
                           "runs": [
                             {
                               "character_spacing": 0,
+                              "color": {
+                                "a": 255,
+                                "b": 0,
+                                "g": 0,
+                                "r": 255
+                              },
+                              "condition_formulas": [],
                               "field_ref": null,
                               "font": {
                                 "bold": false,
@@ -401,6 +415,13 @@
                           "runs": [
                             {
                               "character_spacing": 0,
+                              "color": {
+                                "a": 255,
+                                "b": 0,
+                                "g": 128,
+                                "r": 0
+                              },
+                              "condition_formulas": [],
                               "field_ref": null,
                               "font": {
                                 "bold": false,
@@ -508,6 +529,13 @@
                           "runs": [
                             {
                               "character_spacing": 0,
+                              "color": {
+                                "a": 255,
+                                "b": 255,
+                                "g": 0,
+                                "r": 0
+                              },
+                              "condition_formulas": [],
                               "field_ref": null,
                               "font": {
                                 "bold": false,
@@ -615,6 +643,13 @@
                           "runs": [
                             {
                               "character_spacing": 0,
+                              "color": {
+                                "a": 255,
+                                "b": 255,
+                                "g": 255,
+                                "r": 0
+                              },
+                              "condition_formulas": [],
                               "field_ref": null,
                               "font": {
                                 "bold": false,
@@ -722,6 +757,13 @@
                           "runs": [
                             {
                               "character_spacing": 0,
+                              "color": {
+                                "a": 255,
+                                "b": 255,
+                                "g": 0,
+                                "r": 255
+                              },
+                              "condition_formulas": [],
                               "field_ref": null,
                               "font": {
                                 "bold": false,
@@ -829,6 +871,13 @@
                           "runs": [
                             {
                               "character_spacing": 0,
+                              "color": {
+                                "a": 255,
+                                "b": 128,
+                                "g": 128,
+                                "r": 128
+                              },
+                              "condition_formulas": [],
                               "field_ref": null,
                               "font": {
                                 "bold": false,
@@ -936,6 +985,13 @@
                           "runs": [
                             {
                               "character_spacing": 0,
+                              "color": {
+                                "a": 255,
+                                "b": 35,
+                                "g": 123,
+                                "r": 222
+                              },
+                              "condition_formulas": [],
                               "field_ref": null,
                               "font": {
                                 "bold": false,
@@ -1043,6 +1099,13 @@
                           "runs": [
                             {
                               "character_spacing": 0,
+                              "color": {
+                                "a": 255,
+                                "b": 173,
+                                "g": 13,
+                                "r": 106
+                              },
+                              "condition_formulas": [],
                               "field_ref": null,
                               "font": {
                                 "bold": false,
@@ -1150,6 +1213,13 @@
                           "runs": [
                             {
                               "character_spacing": 0,
+                              "color": {
+                                "a": 255,
+                                "b": 0,
+                                "g": 0,
+                                "r": 0
+                              },
+                              "condition_formulas": [],
                               "field_ref": null,
                               "font": {
                                 "bold": false,
@@ -1257,6 +1327,13 @@
                           "runs": [
                             {
                               "character_spacing": 0,
+                              "color": {
+                                "a": 255,
+                                "b": 0,
+                                "g": 0,
+                                "r": 0
+                              },
+                              "condition_formulas": [],
                               "field_ref": null,
                               "font": {
                                 "bold": false,
@@ -1364,6 +1441,13 @@
                           "runs": [
                             {
                               "character_spacing": 0,
+                              "color": {
+                                "a": 255,
+                                "b": 0,
+                                "g": 0,
+                                "r": 0
+                              },
+                              "condition_formulas": [],
                               "field_ref": null,
                               "font": {
                                 "bold": false,
@@ -1471,6 +1555,13 @@
                           "runs": [
                             {
                               "character_spacing": 0,
+                              "color": {
+                                "a": 255,
+                                "b": 0,
+                                "g": 0,
+                                "r": 0
+                              },
+                              "condition_formulas": [],
                               "field_ref": null,
                               "font": {
                                 "bold": false,
@@ -1578,6 +1669,13 @@
                           "runs": [
                             {
                               "character_spacing": 0,
+                              "color": {
+                                "a": 255,
+                                "b": 0,
+                                "g": 0,
+                                "r": 0
+                              },
+                              "condition_formulas": [],
                               "field_ref": null,
                               "font": {
                                 "bold": false,
@@ -1685,6 +1783,13 @@
                           "runs": [
                             {
                               "character_spacing": 0,
+                              "color": {
+                                "a": 255,
+                                "b": 255,
+                                "g": 255,
+                                "r": 255
+                              },
+                              "condition_formulas": [],
                               "field_ref": null,
                               "font": {
                                 "bold": false,
@@ -1792,6 +1897,13 @@
                           "runs": [
                             {
                               "character_spacing": 0,
+                              "color": {
+                                "a": 255,
+                                "b": 0,
+                                "g": 0,
+                                "r": 0
+                              },
+                              "condition_formulas": [],
                               "field_ref": null,
                               "font": {
                                 "bold": false,
@@ -1899,6 +2011,13 @@
                           "runs": [
                             {
                               "character_spacing": 0,
+                              "color": {
+                                "a": 255,
+                                "b": 0,
+                                "g": 0,
+                                "r": 0
+                              },
+                              "condition_formulas": [],
                               "field_ref": null,
                               "font": {
                                 "bold": false,

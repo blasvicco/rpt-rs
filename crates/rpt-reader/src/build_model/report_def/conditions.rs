@@ -48,9 +48,9 @@ pub(super) fn cond_formula_body(node: &RecordNode, logical: &[u8]) -> String {
 /// Each corresponds to a member of one of the SDK `Cr…ConditionFormulaTypeEnum` vocabularies (object
 /// visibility/display-string/graphic-location; section visibility/new-page-before/after/keep-together/
 /// suppress-if-blank/reset-page-number/underlay/print-at-bottom/background; font color/style; border
-/// colors). A slot naming a string outside this reserved set is not carried (it is not a condition
-/// slot). These are the stored formula names as they appear in the bytes; how (and whether) each maps
-/// to an output surface is the consumer's concern.
+/// colors; numeric/currency format). A slot naming a string outside this reserved set is not carried
+/// (it is not a condition slot). These are the stored formula names as they appear in the bytes; how
+/// (and whether) each maps to an output surface is the consumer's concern.
 pub(crate) fn is_modeled_condition(name: &str) -> bool {
     matches!(
         name,
@@ -76,6 +76,17 @@ pub(crate) fn is_modeled_condition(name: &str) -> bool {
             | "Font_Style"
             // border conditions
             | "Fore_Color"
+            // numeric/currency-format conditions — a field's per-print-run number/currency display
+            // (SAP B1 templates drive these from the document's own currency/locale rather than
+            // baking a fixed symbol/separator into the field)
+            | "N_Decimal_Places"
+            | "Rounding_Type"
+            | "Use_Thousands_Separators"
+            | "Decimal_Symbol"
+            | "Thousand_Symbol"
+            | "Currency_Symbol_Type"
+            | "Currency_Symbol"
+            | "Currency_Position_Type"
     )
 }
 

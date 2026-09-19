@@ -74,17 +74,26 @@ pub(super) fn build_groups(
             .push(row.clone());
     }
 
-    // Sort the group instances by the group's sort direction (on the key). `a`/`b` come from
-    // `order`, which only ever holds keys inserted into `buckets`, so the lookups cannot miss.
-    order.sort_by(|a, b| {
-        let ka = &buckets.get(a).expect("order key is a bucket key").0;
-        let kb = &buckets.get(b).expect("order key is a bucket key").0;
-        let ord = compare_values(ka, kb);
-        match group.sort.direction {
-            SortDirection::DescendingOrder => ord.reverse(),
-            _ => ord,
-        }
-    });
+    // Sort the group instances by the group's sort direction (on the key) — except `NoSortOrder`
+    // ("Original Order" in the designer), which must leave `order` exactly as built above: rows
+    // partitioned into buckets in the print-order they were first seen. Matching it into the
+    // `_ => ord` arm below would silently re-sort it ascending by key, discarding that first-seen
+    // order the same as `AscendingOrder` — the two are not the same thing (an unsorted grouped
+    // field, e.g. a comment line's blank item code among priced items' real ones, must keep
+    // whatever order the query/detail rows already have, not fall alphabetically before them).
+    // `a`/`b` come from `order`, which only ever holds keys inserted into `buckets`, so the lookups
+    // cannot miss.
+    if !matches!(group.sort.direction, SortDirection::NoSortOrder) {
+        order.sort_by(|a, b| {
+            let ka = &buckets.get(a).expect("order key is a bucket key").0;
+            let kb = &buckets.get(b).expect("order key is a bucket key").0;
+            let ord = compare_values(ka, kb);
+            match group.sort.direction {
+                SortDirection::DescendingOrder => ord.reverse(),
+                _ => ord,
+            }
+        });
+    }
 
     let instances: Vec<GroupInstance> = order
         .into_iter()

@@ -159,6 +159,15 @@ pub struct TextRun {
     pub field_ref: Option<String>,
     /// The run's own font, when one was streamed for it. `None` inherits the object font.
     pub font: Option<Font>,
+    /// The run's own color, when one was streamed for it (every run streams its own `FontColor`;
+    /// only the first is promoted to the object's own — see [`FontColor::color`]). `None` inherits
+    /// the object's resolved color.
+    pub color: Option<Color>,
+    /// The run's own `Font_Color`-family condition formulas, as `(reserved formula name, formula
+    /// text)` pairs, when this run streamed its own conditional formatting distinct from the
+    /// object's (only the first run's are promoted to the object's own — see
+    /// [`FontColor::condition_formulas`]). Empty inherits the object's.
+    pub condition_formulas: Vec<(String, String)>,
     /// SDK: `ParagraphTextElement.CharacterSpacing` — a rigid extra advance added after **every**
     /// character of this run, in twips (the designer's Format Editor exposes it as "Character
     /// Spacing Exactly", in points; 20 twips = 1 pt). `0` (the overwhelming default) means natural
@@ -667,6 +676,8 @@ mod tests {
             text: s.to_string(),
             field_ref: None,
             font: None,
+            color: None,
+            condition_formulas: Vec::new(),
             character_spacing: Twips(0),
         }
     }
@@ -676,6 +687,8 @@ mod tests {
             text: rendered.to_string(),
             field_ref: Some(raw.to_string()),
             font: None,
+            color: None,
+            condition_formulas: Vec::new(),
             character_spacing: Twips(0),
         }
     }

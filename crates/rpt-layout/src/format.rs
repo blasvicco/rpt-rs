@@ -13,6 +13,8 @@
 //! designator strings — and only month and weekday *names* still come from there, which is all
 //! Crystal never stores (the leaf holds [`MonthFormat::LongMonth`], never "January").
 
+use crate::resolve::{cond, cond_bool, cond_number, cond_string};
+use rpt_data::DataContext;
 use rpt_format_value::{
     format_bool, format_currency, format_date_in, format_number, format_time_in, BoolFormat,
     CurrencyFormat, CurrencyPosition, DateFormat, DateOrder, FormatSpec, Locale, NegativeStyle,
@@ -26,18 +28,21 @@ use rpt_model::{
 };
 
 /// Build the effective [`FormatSpec`] for a field value of type `vt`, merging the locale defaults
-/// with the field's stored [`FieldFormat`] (when it does not defer to system defaults).
+/// with the field's stored [`FieldFormat`] (when it does not defer to system defaults) and, highest
+/// precedence of all, any numeric/currency conditional-format formulas the field carries (`ctx` is
+/// the record context they evaluate in; `None` outside a record context leaves them unresolved).
 pub fn field_format_spec(
     fmt: Option<&FieldFormat>,
     vt: FieldValueType,
     loc: &Locale,
+    ctx: Option<&DataContext>,
 ) -> FormatSpec {
     use FieldValueType as T;
     match vt {
         T::Int8s | T::Int16s | T::Int32s | T::Int32u | T::Number => {
-            currency_or_number(fmt, vt, loc, false)
+            currency_or_number(fmt, vt, loc, false, ctx)
         }
-        T::Currency => currency_or_number(fmt, vt, loc, true),
+        T::Currency => currency_or_number(fmt, vt, loc, true, ctx),
         T::Date => FormatSpec::Date(date_spec(fmt, loc)),
         T::Time => FormatSpec::Time(time_spec(fmt, loc)),
         T::DateTime => datetime_spec(fmt, loc),
@@ -95,7 +100,7 @@ pub fn render_value_default(value: &Value, loc: &Locale) -> String {
         Value::Bool(_) => FieldValueType::Boolean,
         _ => FieldValueType::String,
     };
-    let mut spec = field_format_spec(None, vt, loc);
+    let mut spec = field_format_spec(None, vt, loc, None);
     // An embedded run sits inside a sentence, not a column, and the engine prints it flush — no sign
     // cell is reserved (`Page  1`, not `Page   1`).
     match &mut spec {
@@ -131,7 +136,12 @@ pub(crate) fn one_currency_symbol_per_page(fmt: Option<&FieldFormat>, vt: FieldV
     fmt.is_some_and(|f| numeric_slot(f, vt).one_currency_symbol_per_page)
 }
 
-fn numeric_spec(fmt: Option<&FieldFormat>, vt: FieldValueType, loc: &Locale) -> NumberFormat {
+fn numeric_spec(
+    fmt: Option<&FieldFormat>,
+    vt: FieldValueType,
+    loc: &Locale,
+    ctx: Option<&DataContext>,
+) -> NumberFormat {
     let mut nf = loc.number_format();
     // The engine reserves the character cell its negative form would occupy on every value that can
     // be negative, so a column's positives line up with its negatives. An unsigned type (`PageNumber`)
@@ -172,8 +182,35 @@ fn numeric_spec(fmt: Option<&FieldFormat>, vt: FieldValueType, loc: &Locale) -> 
         // display rules, so a field that otherwise defers to the host settings still applies them.
         nf.reverse_sign = slot.display_reverse_sign;
         nf.zero_value = zero_value_override(&slot.zero_value_string);
+        apply_numeric_conditions(&mut nf, &slot.condition_formulas, ctx);
     }
     nf
+}
+
+/// Override `nf`'s attributes with the field's numeric conditional-format formulas that evaluate
+/// (a no-op field, or a value that fails to evaluate/typecheck, leaves the attribute as already
+/// resolved). This is the highest-precedence layer of all — above both the field's own stored leaf
+/// and the render locale — since a report author attaches one of these specifically to vary the
+/// attribute per print run (e.g. a SAP B1 template computing its decimal/thousands separators from
+/// the company's own `OADM` regional settings rather than baking one in statically).
+fn apply_numeric_conditions(nf: &mut NumberFormat, conditions: &[(String, String)], ctx: Option<&DataContext>) {
+    if conditions.is_empty() {
+        return;
+    }
+    if let Some(n) = cond_number(conditions, cond::N_DECIMAL_PLACES, ctx) {
+        if n >= 0.0 {
+            nf.decimals = n as u32;
+        }
+    }
+    if let Some(b) = cond_bool(conditions, cond::USE_THOUSANDS_SEPARATORS, ctx) {
+        nf.use_thousands = b;
+    }
+    if let Some(c) = cond_string(conditions, cond::DECIMAL_SYMBOL, ctx).and_then(|s| s.chars().next()) {
+        nf.decimal_sep = c;
+    }
+    if let Some(c) = cond_string(conditions, cond::THOUSAND_SYMBOL, ctx).and_then(|s| s.chars().next()) {
+        nf.thousands_sep = c;
+    }
 }
 
 /// The `ZeroValueString` the engine writes when the field sets no zero literal. It is a marker, not
@@ -209,12 +246,13 @@ fn currency_or_number(
     vt: FieldValueType,
     loc: &Locale,
     symbol_by_default: bool,
+    ctx: Option<&DataContext>,
 ) -> FormatSpec {
-    let number = numeric_spec(fmt, vt, loc);
+    let number = numeric_spec(fmt, vt, loc, ctx);
     // Resolve whether a symbol shows, which one, and where it sits. NoSymbol on an explicit field
     // drops to a plain number; otherwise prefer the field's stored symbol string and stored
     // placement, falling back to the locale when the field stored none (or defers to system defaults).
-    let (show, symbol, position) = match fmt {
+    let (mut show, mut symbol, mut position) = match fmt {
         Some(f) if !f.common.use_system_defaults => {
             let slot = numeric_slot(f, vt);
             let show = slot.currency_symbol != CurrencySymbolFormat::NoSymbol;
@@ -231,6 +269,22 @@ fn currency_or_number(
             loc.currency_position,
         ),
     };
+    // The field's own currency conditional-format formulas, highest precedence of all — see
+    // [`apply_numeric_conditions`]. `Currency_Symbol` is the mechanism a report varies its shown
+    // symbol/code by (e.g. SAP B1 driving it from the invoice's own document currency), so an
+    // evaluated formula wins even over a stored `NoSymbol`/fixed-text choice.
+    if let Some(f) = fmt {
+        let conditions = &numeric_slot(f, vt).condition_formulas;
+        if let Some(code) = cond_number(conditions, cond::CURRENCY_SYMBOL_TYPE, ctx) {
+            show = rpt_model::CurrencySymbolFormat::from_code(code as i32) != CurrencySymbolFormat::NoSymbol;
+        }
+        if let Some(s) = cond_string(conditions, cond::CURRENCY_SYMBOL, ctx) {
+            symbol = s;
+        }
+        if let Some(code) = cond_number(conditions, cond::CURRENCY_POSITION_TYPE, ctx) {
+            position = map_currency_position(rpt_model::CurrencyPosition::from_code(code as i32));
+        }
+    }
     if show {
         FormatSpec::Currency(CurrencyFormat {
             number,
@@ -560,7 +614,7 @@ mod tests {
 
     #[test]
     fn number_uses_locale_when_system_default() {
-        let spec = field_format_spec(None, FieldValueType::Number, &de());
+        let spec = field_format_spec(None, FieldValueType::Number, &de(), None);
         assert_eq!(
             render_value(&Value::Number(1234.5), &spec, &de()),
             " 1.234,50"
@@ -572,7 +626,7 @@ mod tests {
         // A system-default integer field shows no decimals but still groups thousands, like the engine
         // (`1,002`, not `1002`).
         let loc = Locale::from_tag("en-US");
-        let spec = field_format_spec(None, FieldValueType::Int32s, &loc);
+        let spec = field_format_spec(None, FieldValueType::Int32s, &loc, None);
         assert_eq!(render_value(&Value::Number(1002.0), &spec, &loc), " 1,002");
     }
 
@@ -581,14 +635,14 @@ mod tests {
         let mut fmt = explicit_fmt();
         fmt.numeric.decimal_places = 0;
         let loc = Locale::from_tag("en-US");
-        let spec = field_format_spec(Some(&fmt), FieldValueType::Number, &loc);
+        let spec = field_format_spec(Some(&fmt), FieldValueType::Number, &loc, None);
         // 0 explicit decimals wins over the locale's default of 2.
         assert_eq!(render_value(&Value::Number(1234.5), &spec, &loc), " 1,235");
     }
 
     #[test]
     fn date_system_default_uses_locale_order() {
-        let spec = field_format_spec(None, FieldValueType::Date, &de());
+        let spec = field_format_spec(None, FieldValueType::Date, &de(), None);
         // de-DE system-default short date: dd.MM.yyyy.
         assert_eq!(
             render_value(&Value::Date(Date::new(2004, 3, 5)), &spec, &de()),
@@ -601,7 +655,7 @@ mod tests {
         // en-US's Windows short date is M/d/yyyy — the numeric month/day carry no leading zero, unlike
         // the padded dd.MM.yyyy of de-DE and other locales.
         let loc = Locale::from_tag("en-US");
-        let spec = field_format_spec(None, FieldValueType::Date, &loc);
+        let spec = field_format_spec(None, FieldValueType::Date, &loc, None);
         assert_eq!(
             render_value(&Value::Date(Date::new(2023, 5, 2)), &spec, &loc),
             "5/2/2023"
@@ -619,7 +673,7 @@ mod tests {
         fmt.date.date_order = rpt_model::DateOrder::DayMonthYear;
         fmt.date.system_default = DateSystemDefaultType::NotUsingWindowsDefaults;
         let loc = de();
-        let spec = field_format_spec(Some(&fmt), FieldValueType::Date, &loc);
+        let spec = field_format_spec(Some(&fmt), FieldValueType::Date, &loc, None);
         // DMY order, German month name, the field's own stored '/' separator.
         assert_eq!(
             render_value(&Value::Date(Date::new(2004, 3, 5)), &spec, &loc),
@@ -635,7 +689,7 @@ mod tests {
         fmt.currency_numeric.currency_symbol = CurrencySymbolFormat::FloatingSymbol;
         fmt.currency_numeric.currency_symbol_text = "€".to_string();
         let loc = Locale::from_tag("en-US"); // locale symbol is "$"
-        let spec = field_format_spec(Some(&fmt), FieldValueType::Currency, &loc);
+        let spec = field_format_spec(Some(&fmt), FieldValueType::Currency, &loc, None);
         assert_eq!(
             render_value(&Value::Currency(1234.5), &spec, &loc),
             "€1,234.50"
@@ -652,8 +706,8 @@ mod tests {
         let mut czk = explicit_fmt();
         czk.currency_numeric.currency_symbol = CurrencySymbolFormat::FloatingSymbol;
         czk.currency_numeric.currency_symbol_text = "Kč".to_string();
-        let eur_spec = field_format_spec(Some(&eur), FieldValueType::Currency, &loc);
-        let czk_spec = field_format_spec(Some(&czk), FieldValueType::Currency, &loc);
+        let eur_spec = field_format_spec(Some(&eur), FieldValueType::Currency, &loc, None);
+        let czk_spec = field_format_spec(Some(&czk), FieldValueType::Currency, &loc, None);
         assert_eq!(
             render_value(&Value::Currency(10.0), &eur_spec, &loc),
             "€10.00"
@@ -671,7 +725,7 @@ mod tests {
         fmt.currency_numeric.currency_symbol = CurrencySymbolFormat::FixedSymbol;
         fmt.currency_numeric.currency_symbol_text = "kr ".to_string();
         let loc = Locale::from_tag("en-US");
-        let spec = field_format_spec(Some(&fmt), FieldValueType::Currency, &loc);
+        let spec = field_format_spec(Some(&fmt), FieldValueType::Currency, &loc, None);
         assert_eq!(
             render_value(&Value::Currency(10.0), &spec, &loc),
             "kr 10.00"
@@ -684,7 +738,7 @@ mod tests {
         let mut fmt = explicit_fmt();
         fmt.numeric.currency_symbol = CurrencySymbolFormat::NoSymbol;
         let loc = Locale::from_tag("en-US");
-        let spec = field_format_spec(Some(&fmt), FieldValueType::Currency, &loc);
+        let spec = field_format_spec(Some(&fmt), FieldValueType::Currency, &loc, None);
         assert_eq!(render_value(&Value::Currency(10.0), &spec, &loc), " 10.00");
     }
 
@@ -698,7 +752,7 @@ mod tests {
         fmt.numeric.currency_position =
             rpt_model::CurrencyPosition::TrailingCurrencyOutsideNegative;
         let loc = Locale::from_tag("en-US");
-        let spec = field_format_spec(Some(&fmt), FieldValueType::Number, &loc);
+        let spec = field_format_spec(Some(&fmt), FieldValueType::Number, &loc, None);
         assert_eq!(
             render_value(&Value::Number(13.5044), &spec, &loc),
             " 13.50%"
@@ -710,11 +764,11 @@ mod tests {
     #[test]
     fn number_field_does_not_borrow_the_locale_symbol() {
         let loc = Locale::from_tag("en-US");
-        let spec = field_format_spec(None, FieldValueType::Number, &loc);
+        let spec = field_format_spec(None, FieldValueType::Number, &loc, None);
         assert_eq!(render_value(&Value::Number(10.0), &spec, &loc), " 10.00");
         let mut fmt = explicit_fmt();
         fmt.numeric.currency_symbol = CurrencySymbolFormat::NoSymbol;
-        let spec = field_format_spec(Some(&fmt), FieldValueType::Number, &loc);
+        let spec = field_format_spec(Some(&fmt), FieldValueType::Number, &loc, None);
         assert_eq!(render_value(&Value::Number(10.0), &spec, &loc), " 10.00");
     }
 
@@ -728,17 +782,17 @@ mod tests {
         fmt.numeric.thousands_separator = false;
 
         fmt.numeric.negative = NegativeFormat::LeadingMinus;
-        let spec = field_format_spec(Some(&fmt), FieldValueType::Number, &loc);
+        let spec = field_format_spec(Some(&fmt), FieldValueType::Number, &loc, None);
         assert_eq!(render_value(&Value::Number(3080.0), &spec, &loc), " 3080");
         assert_eq!(render_value(&Value::Number(-3080.0), &spec, &loc), "-3080");
 
         fmt.numeric.negative = NegativeFormat::Bracketed;
-        let spec = field_format_spec(Some(&fmt), FieldValueType::Number, &loc);
+        let spec = field_format_spec(Some(&fmt), FieldValueType::Number, &loc, None);
         assert_eq!(render_value(&Value::Number(3080.0), &spec, &loc), " 3080 ");
         assert_eq!(render_value(&Value::Number(-3080.0), &spec, &loc), "(3080)");
 
         fmt.numeric.negative = NegativeFormat::TrailingMinus;
-        let spec = field_format_spec(Some(&fmt), FieldValueType::Number, &loc);
+        let spec = field_format_spec(Some(&fmt), FieldValueType::Number, &loc, None);
         assert_eq!(render_value(&Value::Number(3080.0), &spec, &loc), "3080 ");
     }
 
@@ -751,7 +805,7 @@ mod tests {
         fmt.currency_numeric.currency_symbol = CurrencySymbolFormat::FloatingSymbol;
         fmt.currency_numeric.currency_symbol_text = "$".to_string();
         fmt.currency_numeric.negative = NegativeFormat::Bracketed;
-        let spec = field_format_spec(Some(&fmt), FieldValueType::Currency, &loc);
+        let spec = field_format_spec(Some(&fmt), FieldValueType::Currency, &loc, None);
         assert_eq!(
             render_value(&Value::Currency(2883902.07), &spec, &loc),
             "$2,883,902.07 "
@@ -764,7 +818,7 @@ mod tests {
         fmt.numeric.currency_symbol_text = "%".to_string();
         fmt.numeric.currency_position =
             rpt_model::CurrencyPosition::TrailingCurrencyOutsideNegative;
-        let spec = field_format_spec(Some(&fmt), FieldValueType::Number, &loc);
+        let spec = field_format_spec(Some(&fmt), FieldValueType::Number, &loc, None);
         assert_eq!(
             render_value(&Value::Number(13.5044), &spec, &loc),
             " 13.50%"
@@ -776,14 +830,14 @@ mod tests {
     #[test]
     fn system_default_currency_takes_the_locale_negative_form() {
         let loc = Locale::from_tag("en-US");
-        let spec = field_format_spec(None, FieldValueType::Currency, &loc);
+        let spec = field_format_spec(None, FieldValueType::Currency, &loc, None);
         assert_eq!(render_value(&Value::Currency(53.9), &spec, &loc), "$53.90 ");
         assert_eq!(
             render_value(&Value::Currency(-53.9), &spec, &loc),
             "($53.90)"
         );
         // A number in the same locale keeps the leading minus, and pads on that side instead.
-        let spec = field_format_spec(None, FieldValueType::Number, &loc);
+        let spec = field_format_spec(None, FieldValueType::Number, &loc, None);
         assert_eq!(render_value(&Value::Number(53.9), &spec, &loc), " 53.90");
     }
 
@@ -792,7 +846,7 @@ mod tests {
     #[test]
     fn unsigned_field_reserves_no_cell() {
         let loc = Locale::from_tag("en-US");
-        let spec = field_format_spec(None, FieldValueType::Int32u, &loc);
+        let spec = field_format_spec(None, FieldValueType::Int32u, &loc, None);
         assert_eq!(render_value(&Value::Number(4.0), &spec, &loc), "4");
     }
 
@@ -802,7 +856,7 @@ mod tests {
         let mut fmt = explicit_fmt();
         fmt.numeric.suppress_if_zero = true;
         let loc = Locale::from_tag("en-US");
-        let spec = field_format_spec(Some(&fmt), FieldValueType::Number, &loc);
+        let spec = field_format_spec(Some(&fmt), FieldValueType::Number, &loc, None);
         assert_eq!(render_value(&Value::Number(0.0), &spec, &loc), "");
     }
 
@@ -817,7 +871,7 @@ mod tests {
     #[test]
     fn system_default_currency_uses_locale_symbol() {
         // de-DE: "€", trailing — here we only assert the locale symbol is used, not the position.
-        let spec = field_format_spec(None, FieldValueType::Currency, &de());
+        let spec = field_format_spec(None, FieldValueType::Currency, &de(), None);
         let out = render_value(&Value::Currency(1234.5), &spec, &de());
         assert!(out.contains('€'), "expected locale € symbol, got {out}");
     }
@@ -828,7 +882,7 @@ mod tests {
         let mut fmt = explicit_fmt();
         fmt.numeric.thousands_separator = false;
         let loc = Locale::from_tag("en-US");
-        let spec = field_format_spec(Some(&fmt), FieldValueType::Number, &loc);
+        let spec = field_format_spec(Some(&fmt), FieldValueType::Number, &loc, None);
         assert_eq!(
             render_value(&Value::Number(1234.5), &spec, &loc),
             " 1234.50"
@@ -841,7 +895,7 @@ mod tests {
         let mut fmt = explicit_fmt();
         fmt.numeric.suppress_if_zero = true;
         let loc = Locale::from_tag("en-US");
-        let spec = field_format_spec(Some(&fmt), FieldValueType::Number, &loc);
+        let spec = field_format_spec(Some(&fmt), FieldValueType::Number, &loc, None);
         assert_eq!(render_value(&Value::Number(0.0), &spec, &loc), "");
         assert_eq!(render_value(&Value::Number(12.5), &spec, &loc), " 12.50");
     }
@@ -852,7 +906,7 @@ mod tests {
         let mut fmt = explicit_fmt();
         fmt.numeric.suppress_if_zero = false;
         let loc = Locale::from_tag("en-US");
-        let spec = field_format_spec(Some(&fmt), FieldValueType::Number, &loc);
+        let spec = field_format_spec(Some(&fmt), FieldValueType::Number, &loc, None);
         assert_eq!(render_value(&Value::Number(0.0), &spec, &loc), " 0.00");
     }
 
@@ -864,7 +918,7 @@ mod tests {
         fmt.currency_numeric.currency_symbol = CurrencySymbolFormat::FloatingSymbol;
         fmt.currency_numeric.currency_symbol_text = "$".to_string();
         let loc = Locale::from_tag("en-US");
-        let spec = field_format_spec(Some(&fmt), FieldValueType::Currency, &loc);
+        let spec = field_format_spec(Some(&fmt), FieldValueType::Currency, &loc, None);
         assert_eq!(render_value(&Value::Currency(0.0), &spec, &loc), "");
     }
 
@@ -878,7 +932,7 @@ mod tests {
         fmt.currency_numeric.currency_position =
             rpt_model::CurrencyPosition::TrailingCurrencyInsideNegative;
         let loc = Locale::from_tag("en-US"); // a leading-symbol locale
-        let spec = field_format_spec(Some(&fmt), FieldValueType::Currency, &loc);
+        let spec = field_format_spec(Some(&fmt), FieldValueType::Currency, &loc, None);
         assert_eq!(
             render_value(&Value::Currency(10.0), &spec, &loc),
             " 10.00kr"
@@ -896,7 +950,7 @@ mod tests {
         fmt.date.system_default = DateSystemDefaultType::NotUsingWindowsDefaults;
         fmt.date_time.separator = " @ ".to_string();
         let loc = Locale::from_tag("en-US");
-        let spec = field_format_spec(Some(&fmt), FieldValueType::DateTime, &loc);
+        let spec = field_format_spec(Some(&fmt), FieldValueType::DateTime, &loc, None);
         assert_eq!(
             render_value(
                 &Value::DateTime(Date::new(2004, 1, 3), Time::new(14, 5, 6)),
@@ -919,7 +973,7 @@ mod tests {
         fmt.date.system_default = DateSystemDefaultType::NotUsingWindowsDefaults;
         fmt.date_time.order = DateTimeOrder::DateOnly;
         let loc = Locale::from_tag("en-US");
-        let spec = field_format_spec(Some(&fmt), FieldValueType::DateTime, &loc);
+        let spec = field_format_spec(Some(&fmt), FieldValueType::DateTime, &loc, None);
         assert_eq!(
             render_value(
                 &Value::DateTime(Date::new(2001, 5, 26), Time::new(0, 0, 0)),
@@ -936,7 +990,7 @@ mod tests {
         let mut fmt = explicit_fmt();
         fmt.date_time.order = DateTimeOrder::TimeOnly;
         let loc = Locale::from_tag("en-US");
-        let spec = field_format_spec(Some(&fmt), FieldValueType::DateTime, &loc);
+        let spec = field_format_spec(Some(&fmt), FieldValueType::DateTime, &loc, None);
         assert_eq!(
             render_value(
                 &Value::DateTime(Date::new(2001, 5, 26), Time::new(14, 5, 6)),
@@ -958,7 +1012,7 @@ mod tests {
         fmt.date.system_default = DateSystemDefaultType::NotUsingWindowsDefaults;
         fmt.date_time.order = DateTimeOrder::TimeThenDate;
         let loc = Locale::from_tag("en-US");
-        let spec = field_format_spec(Some(&fmt), FieldValueType::DateTime, &loc);
+        let spec = field_format_spec(Some(&fmt), FieldValueType::DateTime, &loc, None);
         assert_eq!(
             render_value(
                 &Value::DateTime(Date::new(2004, 1, 3), Time::new(14, 5, 6)),
@@ -981,7 +1035,7 @@ mod tests {
         fmt.date.date_order = rpt_model::DateOrder::MonthDayYear;
         fmt.date.system_default = DateSystemDefaultType::NotUsingWindowsDefaults;
         let gb = Locale::from_tag("en-GB"); // a day-month-year locale
-        let spec = field_format_spec(Some(&fmt), FieldValueType::Date, &gb);
+        let spec = field_format_spec(Some(&fmt), FieldValueType::Date, &gb, None);
         assert_eq!(
             render_value(&Value::Date(Date::new(2001, 5, 26)), &spec, &gb),
             "05/26/2001"
@@ -995,7 +1049,7 @@ mod tests {
         fmt.date.date_order = rpt_model::DateOrder::MonthDayYear;
         fmt.date.system_default = DateSystemDefaultType::UseWindowsShortDate;
         let gb = Locale::from_tag("en-GB");
-        let spec = field_format_spec(Some(&fmt), FieldValueType::Date, &gb);
+        let spec = field_format_spec(Some(&fmt), FieldValueType::Date, &gb, None);
         assert_eq!(
             render_value(&Value::Date(Date::new(2001, 5, 26)), &spec, &gb),
             "26/05/2001"
@@ -1012,7 +1066,7 @@ mod tests {
         fmt.date.date_order = rpt_model::DateOrder::MonthDayYear;
         fmt.date.system_default = DateSystemDefaultType::NotUsingWindowsDefaults;
         let loc = Locale::from_tag("en-US");
-        let spec = field_format_spec(Some(&fmt), FieldValueType::DateTime, &loc);
+        let spec = field_format_spec(Some(&fmt), FieldValueType::DateTime, &loc, None);
         assert_eq!(
             render_value(
                 &Value::DateTime(Date::new(2004, 1, 3), Time::new(14, 5, 6)),
@@ -1065,7 +1119,7 @@ mod tests {
     fn render_explicit(time: TimeFieldFormat) -> String {
         let loc = Locale::from_tag("en-US");
         let fmt = explicit_datetime_fmt(time);
-        let spec = field_format_spec(Some(&fmt), FieldValueType::DateTime, &loc);
+        let spec = field_format_spec(Some(&fmt), FieldValueType::DateTime, &loc, None);
         render_value(&midnight(), &spec, &loc)
     }
 
@@ -1203,7 +1257,7 @@ mod tests {
         ));
         fmt.common.use_system_defaults = true;
         let loc = Locale::from_tag("en-US");
-        let spec = field_format_spec(Some(&fmt), FieldValueType::DateTime, &loc);
+        let spec = field_format_spec(Some(&fmt), FieldValueType::DateTime, &loc, None);
         assert_eq!(
             render_value(&midnight(), &spec, &loc),
             "5/26/2001  12:00:00AM"
@@ -1234,7 +1288,7 @@ mod tests {
             SecondFormat::NoSecond,
             ":",
         ));
-        let spec = field_format_spec(Some(&fmt), FieldValueType::Time, &loc);
+        let spec = field_format_spec(Some(&fmt), FieldValueType::Time, &loc, None);
         assert_eq!(
             render_value(&Value::Time(Time::new(0, 0, 0)), &spec, &loc),
             " 0:00"
@@ -1257,7 +1311,7 @@ mod tests {
         fmt.date.second_separator = "BBB".to_string();
         fmt.date.suffix_separator = "DDDDD".to_string();
         let loc = Locale::from_tag("en-US");
-        let spec = field_format_spec(Some(&fmt), FieldValueType::Date, &loc);
+        let spec = field_format_spec(Some(&fmt), FieldValueType::Date, &loc, None);
         assert_eq!(
             render_value(&Value::Date(Date::new(2023, 12, 31)), &spec, &loc),
             "CCCC2023AA12BBB31DDDDD"
@@ -1281,7 +1335,7 @@ mod tests {
         };
         let loc = Locale::from_tag("en-US");
         let render = |fmt: &FieldFormat| {
-            let spec = field_format_spec(Some(fmt), FieldValueType::Date, &loc);
+            let spec = field_format_spec(Some(fmt), FieldValueType::Date, &loc, None);
             render_value(&Value::Date(Date::new(2024, 1, 7)), &spec, &loc)
         };
 
@@ -1315,7 +1369,7 @@ mod tests {
         };
         let loc = Locale::from_tag("en-US");
         let render = |fmt: &FieldFormat| {
-            let spec = field_format_spec(Some(fmt), FieldValueType::Date, &loc);
+            let spec = field_format_spec(Some(fmt), FieldValueType::Date, &loc, None);
             render_value(&Value::Date(Date::new(2023, 12, 31)), &spec, &loc)
         };
 
@@ -1348,7 +1402,7 @@ mod tests {
         fmt.date.first_separator = " de ".to_string();
         fmt.date.second_separator = " del ".to_string();
         let loc = Locale::from_tag("en-US");
-        let spec = field_format_spec(Some(&fmt), FieldValueType::Date, &loc);
+        let spec = field_format_spec(Some(&fmt), FieldValueType::Date, &loc, None);
         assert_eq!(
             render_value(&Value::Date(Date::new(2024, 1, 7)), &spec, &loc),
             "7 de 1 del 2024"
@@ -1364,7 +1418,7 @@ mod tests {
         fmt.date.first_separator = "AA".to_string();
         fmt.date.second_separator = "BBB".to_string();
         let loc = Locale::from_tag("en-US");
-        let spec = field_format_spec(Some(&fmt), FieldValueType::Date, &loc);
+        let spec = field_format_spec(Some(&fmt), FieldValueType::Date, &loc, None);
         assert_eq!(
             render_value(&Value::Date(Date::new(2024, 1, 7)), &spec, &loc),
             "1/7/2024"
@@ -1386,7 +1440,7 @@ mod tests {
         };
         let loc = Locale::from_tag("en-US");
         let render = |fmt: &FieldFormat| {
-            let spec = field_format_spec(Some(fmt), FieldValueType::Date, &loc);
+            let spec = field_format_spec(Some(fmt), FieldValueType::Date, &loc, None);
             render_value(&Value::Date(Date::new(2023, 12, 31)), &spec, &loc)
         };
         let plain = render(&base());
@@ -1407,11 +1461,11 @@ mod tests {
         let mut fmt = explicit_fmt();
         fmt.numeric.use_lead_zero = false;
         let loc = Locale::from_tag("en-US");
-        let spec = field_format_spec(Some(&fmt), FieldValueType::Number, &loc);
+        let spec = field_format_spec(Some(&fmt), FieldValueType::Number, &loc, None);
         assert_eq!(render_value(&Value::Number(0.25), &spec, &loc), " .25");
         // The same field with the flag on keeps it.
         fmt.numeric.use_lead_zero = true;
-        let spec = field_format_spec(Some(&fmt), FieldValueType::Number, &loc);
+        let spec = field_format_spec(Some(&fmt), FieldValueType::Number, &loc, None);
         assert_eq!(render_value(&Value::Number(0.25), &spec, &loc), " 0.25");
     }
 
@@ -1422,12 +1476,12 @@ mod tests {
         let mut fmt = explicit_fmt();
         fmt.numeric.display_reverse_sign = true;
         let loc = Locale::from_tag("en-US");
-        let spec = field_format_spec(Some(&fmt), FieldValueType::Number, &loc);
+        let spec = field_format_spec(Some(&fmt), FieldValueType::Number, &loc, None);
         assert_eq!(render_value(&Value::Number(1.0), &spec, &loc), "-1.00");
         assert_eq!(render_value(&Value::Number(-1.0), &spec, &loc), " 1.00");
 
         fmt.numeric.negative = NegativeFormat::Bracketed;
-        let spec = field_format_spec(Some(&fmt), FieldValueType::Number, &loc);
+        let spec = field_format_spec(Some(&fmt), FieldValueType::Number, &loc, None);
         assert_eq!(render_value(&Value::Number(1.0), &spec, &loc), "(1.00)");
     }
 
@@ -1437,14 +1491,14 @@ mod tests {
         let mut fmt = explicit_fmt();
         fmt.numeric.zero_value_string = "n/a".to_string();
         let loc = Locale::from_tag("en-US");
-        let spec = field_format_spec(Some(&fmt), FieldValueType::Number, &loc);
+        let spec = field_format_spec(Some(&fmt), FieldValueType::Number, &loc, None);
         assert_eq!(render_value(&Value::Number(0.0), &spec, &loc), "n/a");
         assert_eq!(render_value(&Value::Number(1.0), &spec, &loc), " 1.00");
 
         fmt.currency_numeric.zero_value_string = "n/a".to_string();
         fmt.currency_numeric.currency_symbol = CurrencySymbolFormat::FloatingSymbol;
         fmt.currency_numeric.currency_symbol_text = "$".to_string();
-        let spec = field_format_spec(Some(&fmt), FieldValueType::Currency, &loc);
+        let spec = field_format_spec(Some(&fmt), FieldValueType::Currency, &loc, None);
         assert_eq!(render_value(&Value::Currency(0.0), &spec, &loc), "n/a");
     }
 
@@ -1456,7 +1510,7 @@ mod tests {
         fmt.numeric.zero_value_string = "n/a".to_string();
         fmt.numeric.suppress_if_zero = true;
         let loc = Locale::from_tag("en-US");
-        let spec = field_format_spec(Some(&fmt), FieldValueType::Number, &loc);
+        let spec = field_format_spec(Some(&fmt), FieldValueType::Number, &loc, None);
         assert_eq!(render_value(&Value::Number(0.0), &spec, &loc), "");
     }
 
@@ -1467,7 +1521,7 @@ mod tests {
         let mut fmt = explicit_fmt();
         fmt.numeric.zero_value_string = "<Default Format>".to_string();
         let loc = Locale::from_tag("en-US");
-        let spec = field_format_spec(Some(&fmt), FieldValueType::Number, &loc);
+        let spec = field_format_spec(Some(&fmt), FieldValueType::Number, &loc, None);
         assert_eq!(render_value(&Value::Number(0.0), &spec, &loc), " 0.00");
     }
 
@@ -1476,7 +1530,7 @@ mod tests {
         let mut fmt = FieldFormat::default();
         fmt.boolean.output_type = BooleanOutputType::YesOrNo;
         let loc = Locale::from_tag("en-US");
-        let spec = field_format_spec(Some(&fmt), FieldValueType::Boolean, &loc);
+        let spec = field_format_spec(Some(&fmt), FieldValueType::Boolean, &loc, None);
         assert_eq!(render_value(&Value::Bool(true), &spec, &loc), "Yes");
     }
 }
